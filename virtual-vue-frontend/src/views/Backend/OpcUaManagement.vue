@@ -135,7 +135,7 @@ const refreshStatus = async () => {
   loading.value = true;
   try {
     const response = await getOpcUaStatus();
-    status.value = response.data;
+    status.value = response.data.data;
   } catch (error) {
     ElMessage.error('获取OPC UA状态失败');
     console.error(error);
@@ -148,8 +148,8 @@ const syncDevices = async () => {
   syncing.value = true;
   try {
     const response = await syncOpcUaDevices();
-    if (response.data) {
-      ElMessage.success(`同步完成: 创建 ${response.data.created} 个, 跳过 ${response.data.skipped} 个`);
+    if (response.data.data) {
+      ElMessage.success(`同步完成: 创建 ${response.data.data.created} 个, 跳过 ${response.data.data.skipped} 个`);
       refreshStatus();
     }
   } catch (error) {

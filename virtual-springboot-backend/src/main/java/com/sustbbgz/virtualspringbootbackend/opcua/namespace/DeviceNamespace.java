@@ -28,6 +28,7 @@ public class DeviceNamespace extends ManagedNamespaceWithLifecycle {
     private final DeviceNodeStore deviceNodeStore;
     private UaFolderNode devicesFolder;
     private BiConsumer<String, Double> temperatureDataCallback;
+    private BiConsumer<String, Object> deviceDataCallback;
 
     public DeviceNamespace(OpcUaServer server) {
         super(server, "urn:digital-twin:devices");
@@ -39,6 +40,10 @@ public class DeviceNamespace extends ManagedNamespaceWithLifecycle {
 
     public void setTemperatureDataCallback(BiConsumer<String, Double> callback) {
         this.temperatureDataCallback = callback;
+    }
+
+    public void setDeviceDataCallback(BiConsumer<String, Object> callback) {
+        this.deviceDataCallback = callback;
     }
 
     private void createAddressSpace() {
@@ -137,10 +142,13 @@ public class DeviceNamespace extends ManagedNamespaceWithLifecycle {
             }
 
             NodeId dataNodeId = new NodeId(namespaceIndex, "Device_" + deviceName + "_Data");
-            UaVariableNode dataNode = createWritableVariable(
+            DeviceDataVariableNode dataNode = new DeviceDataVariableNode(
+                getNodeContext(),
                 dataNodeId,
                 new QualifiedName(namespaceIndex, "Data"),
-                new LocalizedText("Data")
+                new LocalizedText("Data"),
+                deviceName,
+                deviceDataCallback
             );
             dataNode.setDataType(Identifiers.String);
             dataNode.setValue(new DataValue(new Variant("{}")));
@@ -148,10 +156,13 @@ public class DeviceNamespace extends ManagedNamespaceWithLifecycle {
             deviceFolder.addOrganizes(dataNode);
 
             NodeId statusNodeId = new NodeId(namespaceIndex, "Device_" + deviceName + "_Status");
-            UaVariableNode statusNode = createWritableVariable(
+            DeviceDataVariableNode statusNode = new DeviceDataVariableNode(
+                getNodeContext(),
                 statusNodeId,
                 new QualifiedName(namespaceIndex, "Status"),
-                new LocalizedText("Status")
+                new LocalizedText("Status"),
+                deviceName,
+                deviceDataCallback
             );
             statusNode.setDataType(Identifiers.String);
             statusNode.setValue(new DataValue(new Variant("Offline")));

@@ -32,6 +32,12 @@ class OPCUADeviceClient:
         self.connected = False
         self.idx = None
         self.device_node = None
+        
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = 10
+        self.initial_delay = 1
+        self.max_delay = 60
+        self.backoff_factor = 2
     
     async def connect(self):
         """连接到 OPC UA 服务器"""
@@ -68,9 +74,55 @@ class OPCUADeviceClient:
     async def disconnect(self):
         """断开连接"""
         if self.client and self.connected:
-            await self.client.disconnect()
+            try:
+                await self.client.disconnect()
+            except Exception:
+                pass
+        self.connected = False
+        self.device_node = None
+        print(f"设备 {self.device_id} 已断开")
+    
+    def _calculate_backoff_delay(self):
+        """计算指数退避延迟时间"""
+        delay = self.initial_delay * (self.backoff_factor ** self.reconnect_attempts)
+        return min(delay, self.max_delay)
+    
+    async def reconnect_with_backoff(self):
+        """使用指数退避算法进行重连"""
+        if self.reconnect_attempts >= self.max_reconnect_attempts:
+            print(f"已达到最大重连次数 {self.max_reconnect_attempts}，停止重连")
+            return False
+        
+        self.reconnect_attempts += 1
+        delay = self._calculate_backoff_delay()
+        
+        print(f"\n尝试第 {self.reconnect_attempts} 次重连，等待 {delay:.1f} 秒...")
+        await asyncio.sleep(delay)
+        
+        try:
+            await self.disconnect()
+            await self.connect()
+            
+            self.reconnect_attempts = 0
+            print("✓ 重连成功！")
+            return True
+            
+        except Exception as e:
+            print(f"✗ 重连失败: {e}")
+            return False
+    
+    async def ensure_connection(self):
+        """确保连接可用，如果断开则尝试重连"""
+        if not self.connected or self.client is None:
+            return await self.reconnect_with_backoff()
+        
+        try:
+            await self.client.get_namespace_array()
+            return True
+        except Exception:
+            print("检测到连接已断开")
             self.connected = False
-            print(f"设备 {self.device_id} 已断开")
+            return await self.reconnect_with_backoff()
     
     async def find_device_node(self):
         """查找设备节点 - 使用多种策略"""
@@ -141,10 +193,9 @@ class OPCUADeviceClient:
         except Exception:
             return None
     
-    async def write_data(self, data_name, value):
+    async def write_data(self, data_name, value, retry_on_failure=True):
         """写入数据到服务器"""
-        if not self.connected:
-            print("未连接到服务器")
+        if not await self.ensure_connection():
             return False
         
         try:
@@ -178,12 +229,16 @@ class OPCUADeviceClient:
             
         except Exception as e:
             print(f"写入数据失败: {e}")
+            if retry_on_failure:
+                self.connected = False
+                print("尝试重新连接...")
+                if await self.reconnect_with_backoff():
+                    return await self.write_data(data_name, value, retry_on_failure=False)
             return False
     
-    async def read_data(self, data_name):
+    async def read_data(self, data_name, retry_on_failure=True):
         """读取数据"""
-        if not self.connected:
-            print("未连接到服务器")
+        if not await self.ensure_connection():
             return None
         
         try:
@@ -201,11 +256,16 @@ class OPCUADeviceClient:
             
         except Exception as e:
             print(f"读取数据失败: {e}")
+            if retry_on_failure:
+                self.connected = False
+                print("尝试重新连接...")
+                if await self.reconnect_with_backoff():
+                    return await self.read_data(data_name, retry_on_failure=False)
             return None
     
-    async def update_status(self, status):
+    async def update_status(self, status, retry_on_failure=True):
         """更新设备状态"""
-        if not self.connected:
+        if not await self.ensure_connection():
             return False
         
         try:
@@ -223,6 +283,11 @@ class OPCUADeviceClient:
             return False
         except Exception as e:
             print(f"更新状态失败: {e}")
+            if retry_on_failure:
+                self.connected = False
+                print("尝试重新连接...")
+                if await self.reconnect_with_backoff():
+                    return await self.update_status(status, retry_on_failure=False)
             return False
     
     async def subscribe_to_data_changes(self, callback):
@@ -259,39 +324,47 @@ async def run_opcua_device():
     client = OPCUADeviceClient(SERVER_URL, DEVICE_ID, DEVICE_NAME)
     
     try:
-        await client.connect()
-        
-        await client.update_status("在线")
-        
-        print("\n开始发送数据 (按 Ctrl+C 停止)...")
-        print("=" * 50)
-        
-        count = 0
         while True:
-            temperature = round(random.uniform(18, 28), 2)
-            
-            success = await client.write_data("Temperature", temperature)
-            
-            timestamp = datetime.now().strftime('%H:%M:%S')
-            status = "✓" if success else "✗"
-            print(f"[{timestamp}] {status} 温度: {temperature}℃")
-            
-            count += 1
-            if count % 10 == 0:
-                await client.update_status(f"在线 - 已发送 {count} 条数据")
-            
-            await asyncio.sleep(1)
-            
+            try:
+                if not client.connected:
+                    print("\n正在连接 OPC UA 服务器...")
+                    await client.connect()
+                    await client.update_status("在线")
+                    print("\n开始发送数据 (按 Ctrl+C 停止)...")
+                    print("=" * 50)
+                
+                count = 0
+                while client.connected:
+                    temperature = round(random.uniform(18, 28), 2)
+                    
+                    success = await client.write_data("Temperature", temperature)
+                    
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    status = "✓" if success else "✗"
+                    print(f"[{timestamp}] {status} 温度: {temperature}℃")
+                    
+                    count += 1
+                    if count % 10 == 0:
+                        await client.update_status(f"在线 - 已发送 {count} 条数据")
+                    
+                    await asyncio.sleep(1)
+                
+                if not client.connected:
+                    print("\n连接已断开，准备重连...")
+                    
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(f"\n发生错误: {e}")
+                client.connected = False
+                
     except KeyboardInterrupt:
         print("\n正在停止...")
-    except Exception as e:
-        print(f"\n连接失败: {e}")
-        print("\n提示: 请确保后端 OPC UA 服务已启动")
-        print("  1. 检查 application.yml 中 opcua.server.enabled=true")
-        print("  2. 重启后端服务")
-        print("  3. 查看后端日志确认 OPC UA 服务启动状态")
     finally:
-        await client.update_status("离线")
+        try:
+            await client.update_status("离线", retry_on_failure=False)
+        except Exception:
+            pass
         await client.disconnect()
 
 

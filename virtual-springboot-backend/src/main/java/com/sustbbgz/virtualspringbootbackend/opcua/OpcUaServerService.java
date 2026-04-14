@@ -129,11 +129,20 @@ public class OpcUaServerService {
             deviceNamespace.setTemperatureDataCallback((deviceId, temperature) -> {
                 try {
                     deviceDataService.saveDeviceData(deviceId, "temperature", temperature, "°C");
+                    if (deviceService != null) {
+                        deviceService.updateOnlineStatus(deviceId, 1);
+                    }
                 } catch (Exception e) {
                     logger.warn("Failed to persist temperature data for device {}: {}", deviceId, e.getMessage());
                 }
             });
         }
+        
+        deviceNamespace.setDeviceDataCallback((deviceId, value) -> {
+            if (deviceService != null) {
+                deviceService.updateOnlineStatus(deviceId, 1);
+            }
+        });
         
         deviceNamespace.startup();
 
