@@ -18,18 +18,22 @@ export const COS_CONFIG = {
     baseUrl: import.meta.env.VITE_COS_BASE_URL || ''
 };
 
+function normalizePath(base, path) {
+    const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${cleanBase}/${cleanPath}`;
+}
+
 export function getModelUrl(path) {
     if (COS_CONFIG.enabled && COS_CONFIG.baseUrl) {
-        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-        return `${COS_CONFIG.baseUrl}/${cleanPath}`;
+        return normalizePath(COS_CONFIG.baseUrl, path);
     }
-    return `${STATIC_CONFIG.modelBaseURL}/${path}`;
+    return normalizePath(STATIC_CONFIG.modelBaseURL, path);
 }
 
 export function getSceneUrl(path) {
     if (COS_CONFIG.enabled && COS_CONFIG.baseUrl) {
-        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-        return `${COS_CONFIG.baseUrl}/${cleanPath}`;
+        return normalizePath(COS_CONFIG.baseUrl, path);
     }
-    return `${STATIC_CONFIG.sceneBaseURL}/${path}`;
+    return normalizePath(STATIC_CONFIG.sceneBaseURL, path);
 }

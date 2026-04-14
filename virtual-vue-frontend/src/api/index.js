@@ -110,7 +110,10 @@ export const deleteOpcUaDevice = (name) => apiClient.delete(`${API_PREFIX}/opcua
 
 export const getFileUrl = (name) => `${API_CONFIG.baseURL}${API_PREFIX}/files/${name}`;
 export const getModelStaticUrl = (name) => getModelUrl(`models/${name}.glb`);
-export const getModelPathUrl = (path) => getModelUrl(path.startsWith('models/') ? path : `models/${path}`);
+export const getModelPathUrl = (path) => {
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return getModelUrl(cleanPath.startsWith('models/') ? cleanPath : `models/${cleanPath}`);
+};
 export const getScenePathUrl = (path) => getSceneUrl(path);
 export const getGateStationUrl = () => EXTERNAL_CONFIG.gateStationURL;
 
