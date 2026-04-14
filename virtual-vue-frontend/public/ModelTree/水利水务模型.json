@@ -1,0 +1,68 @@
+[
+  {
+    "name": "水务水利场景",
+    "children": [
+      {
+        "name": "水闸设备",
+        "children": [
+          { "name": "卷扬式启闭机", "path": "models/水务水利/水闸设备/卷扬式启闭机.glb", "description": "用于启闭闸门的机械设备", "category": "水闸设备" },
+          { "name": "叠梁闸门", "path": "models/水务水利/水闸设备/叠梁闸门.glb", "description": "叠梁式闸门设备", "category": "水闸设备" },
+          { "name": "平面钢闸门", "path": "models/水务水利/水闸设备/平面钢闸门.glb", "description": "平面钢制闸门", "category": "水闸设备" }
+        ]
+      },
+      {
+        "name": "水泵设备",
+        "children": [
+          { "name": "离心泵", "path": "models/水务水利/水泵设备/离心泵.glb", "description": "离心式水泵", "category": "水泵设备" },
+          { "name": "轴流泵", "path": "models/水务水利/水泵设备/轴流泵.glb", "description": "轴流式水泵", "category": "水泵设备" },
+          { "name": "潜水泵", "path": "models/水务水利/水泵设备/潜水泵.glb", "description": "潜水式水泵", "category": "水泵设备" },
+          { "name": "泵房", "path": "models/水务水利/水泵设备/泵房.glb", "description": "水泵房建筑", "category": "水泵设备" }
+        ]
+      },
+      {
+        "name": "水处理设备",
+        "children": [
+          { "name": "沉淀池", "path": "models/水务水利/水处理设备/沉淀池.glb", "description": "水处理沉淀池", "category": "水处理设备" },
+          { "name": "砂滤器", "path": "models/水务水利/水处理设备/砂滤器.glb", "description": "砂滤过滤设备", "category": "水处理设备" },
+          { "name": "活性炭过滤器", "path": "models/水务水利/水处理设备/活性炭过滤器.glb", "description": "活性炭过滤设备", "category": "水处理设备" },
+          { "name": "紫外线消毒通道", "path": "models/水务水利/水处理设备/紫外线消毒通道.glb", "description": "紫外线消毒设备", "category": "水处理设备" },
+          { "name": "格栅除污机", "path": "models/水务水利/水处理设备/格栅除污机.glb", "description": "格栅除污设备", "category": "水处理设备" }
+        ]
+      },
+      {
+        "name": "监测与自动化设备",
+        "children": [
+          { "name": "雷达水位计", "path": "models/水务水利/监测与自动化设备/雷达水位计.glb", "description": "雷达式水位测量设备", "category": "监测设备" },
+          { "name": "超声波流量计", "path": "models/水务水利/监测与自动化设备/超声波流量计.glb", "description": "超声波流量测量设备", "category": "监测设备" },
+          { "name": "视频监控摄像头", "path": "models/水务水利/监测与自动化设备/视频监控摄像头.glb", "description": "视频监控设备", "category": "监测设备" },
+          { "name": "自动化控制柜", "path": "models/水务水利/监测与自动化设备/自动化控制柜.glb", "description": "自动化控制设备", "category": "监测设备" }
+        ]
+      },
+      {
+        "name": "雨洪利用",
+        "children": [
+          { "name": "排涝泵站", "path": "models/水务水利/雨洪利用/排涝泵站.glb", "description": "排涝泵站设施", "category": "雨洪利用" },
+          { "name": "泄洪洞", "path": "models/水务水利/雨洪利用/泄洪洞.glb", "description": "泄洪隧道设施", "category": "雨洪利用" },
+          { "name": "移动式防洪墙", "path": "models/水务水利/雨洪利用/移动式防洪墙.glb", "description": "移动式防洪设备", "category": "雨洪利用" },
+          { "name": "雨水花园", "path": "models/水务水利/雨洪利用/雨水花园.glb", "description": "雨水花园设施", "category": "雨洪利用" }
+        ]
+      },
+      {
+        "name": "取水与原水系统",
+        "children": [
+          { "name": "深井", "path": "models/水务水利/取水与原水系统/深井.glb", "description": "深井取水设施", "category": "取水系统" },
+          { "name": "闸门井", "path": "models/水务水利/取水与原水系统/闸门井.glb", "description": "闸门井设施", "category": "取水系统" },
+          { "name": "原水泵", "path": "models/水务水利/取水与原水系统/原水泵.glb", "description": "原水泵设备", "category": "取水系统" }
+        ]
+      },
+      {
+        "name": "水坝",
+        "children": [
+          { "name": "水坝", "path": "models/水坝/shuiba.glb", "description": "水坝模型", "category": "水坝" },
+          { "name": "球体", "path": "models/水坝/Sphere.glb", "description": "球形模型", "category": "水坝" },
+          { "name": "圆柱体", "path": "models/水坝/Cylinder.glb", "description": "圆柱形模型", "category": "水坝" }
+        ]
+      }
+    ]
+  }
+]

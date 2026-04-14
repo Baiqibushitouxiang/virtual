@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sustbbgz.virtualspringbootbackend.mapper.CompositeModelComponentMapper">
+
+    <resultMap id="CompositeModelComponentResultMap" type="com.sustbbgz.virtualspringbootbackend.entity.CompositeModelComponent">
+        <id column="id" property="id"/>
+        <result column="composite_model_id" property="compositeModelId"/>
+        <result column="model_id" property="modelId"/>
+        <result column="position_x" property="position_x"/>
+        <result column="position_y" property="position_y"/>
+        <result column="position_z" property="position_z"/>
+        <result column="rotation_x" property="rotation_x"/>
+        <result column="rotation_y" property="rotation_y"/>
+        <result column="rotation_z" property="rotation_z"/>
+        <result column="scale_x" property="scale_x"/>
+        <result column="scale_y" property="scale_y"/>
+        <result column="scale_z" property="scale_z"/>
+    </resultMap>
+
+    <select id="findByCompositeModelId" resultMap="CompositeModelComponentResultMap">
+        SELECT * FROM composite_model_components WHERE composite_model_id = #{compositeModelId}
+    </select>
+    
+    <delete id="deleteByCompositeModelId">
+        DELETE FROM composite_model_components WHERE composite_model_id = #{compositeModelId}
+    </delete>
+
+</mapper>

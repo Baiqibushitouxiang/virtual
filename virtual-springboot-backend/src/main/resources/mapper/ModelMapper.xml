@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sustbbgz.virtualspringbootbackend.mapper.ModelMapper">
+    <resultMap id="pageModel" type="com.sustbbgz.virtualspringbootbackend.entity.Model">
+        <result column="id" property="id" />
+        <result column="modelname" property="modelname" />
+        <result column="x" property="x" />
+        <result column="y" property="y" />
+        <result column="z" property="z" />
+        <result column="scalex" property="scalex" />
+        <result column="scaley" property="scaley" />
+        <result column="scalez" property="scalez" />
+        <result column="type" property="type" />
+    </resultMap>
+
+    <select id="findPage" resultMap="pageModel">
+        select id,modename,x,y,z,scalex,scaley,scalez,type from models
+        <where>
+            <if test="modelname != null and modelname != ''">
+                and models.modelname like concat('%', #{modelname} ,'%')
+            </if>
+            <if test="type != null and type != ''">
+                and models.type like concat('%', #{type} ,'%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据名称查询模型 -->
+    <select id="findByName" resultType="com.sustbbgz.virtualspringbootbackend.entity.Model">
+        SELECT * FROM models WHERE name = #{name}
+    </select>
+</mapper>

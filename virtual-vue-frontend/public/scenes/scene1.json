@@ -1,0 +1,64 @@
+{
+  "models": [
+    {
+      "name": "盆栽1",
+      "file": "/办公室/盆栽1.glb",
+      "position": {
+        "x": -2.2,
+        "y": 2,
+        "z": 3
+      },
+      "scale": {
+        "x": 5,
+        "y": 5,
+        "z": 5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "boundData": null
+    },
+    {
+      "name": "花盆1",
+      "file": "/办公室/花盆1.glb",
+      "position": {
+        "x": -2.2,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 5,
+        "y": 5,
+        "z": 5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "boundData": null
+    },
+    {
+      "name": "办公室",
+      "file": "/办公室/办公室.glb",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 5,
+        "y": 5,
+        "z": 5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "boundData": null
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+### OS Generated Files ###
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+### IDE ###
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+### Logs ###
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+### Dependencies ###
+node_modules/
+
+### Build Output ###
+dist/
+dist-ssr/
+target/
+build/
+
+### Model Files (All Projects) ###
+*.glb
+*.gltf
+*.obj
+*.fbx
+*.stl
+*.dae
+*.3ds
+*.blend
+*.drc
+*.max
+*.ma
+*.mb
+
+### Large Directories ###
+virtual-vue-frontend/public/Model_new/
+virtual-vue-frontend/public/draco-main/
+virtual-vue-frontend/public/draco/
+virtual-springboot-backend/data/scenes/
+virtual-springboot-backend/static/models/
+
+### Temporary Files ###
+*.tmp
+*.temp
+*~
+
+### Sensitive Files ###
+*.p12
+*.jks
+*.keystore
+.env
+.env.local
+.env.*.local
+application-local.yml
+application-prod.yml
+
+### Office Files ###
+*.docx
+*.doc

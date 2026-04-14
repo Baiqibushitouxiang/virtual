@@ -1,0 +1,274 @@
+[
+  {
+    "name": "水利水务场景",
+    "children": [
+      {
+        "name": "水泵设备",
+        "children": [
+          { "name": "离心泵", "children": null },
+          { "name": "轴流泵", "children": null },
+          { "name": "混流泵", "children": null },
+          { "name": "潜水泵", "children": null }
+        ]
+      },
+      {
+        "name": "管道系统",
+        "children": [
+          { "name": "输水管", "children": null },
+          { "name": "排水管", "children": null },
+          { "name": "压力管", "children": null },
+          { "name": "阀门", "children": null },
+          { "name": "弯头", "children": null },
+          { "name": "三通", "children": null }
+        ]
+      },
+      {
+        "name": "水闸设备",
+        "children": [
+          { "name": "闸门", "children": null },
+          { "name": "启闭机", "children": null },
+          { "name": "闸室", "children": null }
+        ]
+      },
+      {
+        "name": "水处理设备",
+        "children": [
+          { "name": "过滤器", "children": null },
+          { "name": "沉淀池", "children": null },
+          { "name": "消毒设备", "children": null },
+          { "name": "加药设备", "children": null }
+        ]
+      },
+      {
+        "name": "测量设备",
+        "children": [
+          { "name": "流量计", "children": null },
+          { "name": "压力表", "children": null },
+          { "name": "水位计", "children": null },
+          { "name": "水质监测仪", "children": null }
+        ]
+      },
+      {
+        "name": "水坝工程",
+        "children": [
+          { "name": "坝体", "children": null },
+          { "name": "溢洪道", "children": null },
+          { "name": "导流洞", "children": null }
+        ]
+      },
+      {
+        "name": "施工机械",
+        "children": [
+          { "name": "挖掘机", "children": null },
+          { "name": "推土机", "children": null },
+          { "name": "起重机", "children": null }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "办公室",
+    "children": [
+      { "name": "办公室", "children": null },
+      { "name": "字画1", "children": null },
+      { "name": "字画2", "children": null },
+      { "name": "字画3", "children": null },
+      { "name": "柜子", "children": null },
+      { "name": "桌子", "children": null },
+      { "name": "椅子1", "children": null },
+      { "name": "椅子2", "children": null },
+      { "name": "沙发1", "children": null },
+      { "name": "沙发2", "children": null },
+      { "name": "沙发3", "children": null },
+      { "name": "沙发4", "children": null },
+      { "name": "沙发5", "children": null },
+      { "name": "盆栽1", "children": null },
+      { "name": "盆栽2", "children": null },
+      { "name": "盆栽3", "children": null },
+      { "name": "花盆1", "children": null },
+      { "name": "花盆2", "children": null },
+      { "name": "花盆3", "children": null }
+    ]
+  },
+  {
+    "name": "实验室",
+    "children": [
+      { "name": "剪子", "children": null },
+      { "name": "吸瓶", "children": null },
+      { "name": "吸附棉", "children": null },
+      { "name": "天平", "children": null },
+      { "name": "实验台", "children": null },
+      { "name": "废液桶", "children": null },
+      { "name": "废液桶托盘", "children": null },
+      { "name": "手套", "children": null },
+      { "name": "托盘", "children": null },
+      { "name": "振荡器", "children": null },
+      { "name": "易制毒试剂柜", "children": null },
+      { "name": "显微镜", "children": null },
+      { "name": "普通试剂柜", "children": null },
+      { "name": "水浴锅", "children": null },
+      { "name": "洗眼器", "children": null },
+      { "name": "消防柜", "children": null },
+      { "name": "滴管", "children": null },
+      { "name": "漏斗", "children": null },
+      { "name": "灭火器", "children": null },
+      { "name": "灭菌锅", "children": null },
+      { "name": "烘箱", "children": null },
+      { "name": "烧杯", "children": null },
+      { "name": "玻璃棒", "children": null },
+      { "name": "研钵、研磨棒", "children": null },
+      { "name": "离心机", "children": null },
+      { "name": "离心管", "children": null },
+      { "name": "称量纸", "children": null },
+      { "name": "药勺", "children": null },
+      { "name": "试剂瓶", "children": null },
+      { "name": "试管", "children": null },
+      { "name": "试管架", "children": null },
+      { "name": "超净台", "children": null },
+      { "name": "通风橱", "children": null },
+      { "name": "酒精桶", "children": null },
+      { "name": "酒精灯", "children": null },
+      { "name": "防爆冰箱", "children": null },
+      { "name": "马弗炉", "children": null }
+    ]
+  },
+  {
+    "name": "律师所",
+    "children": [
+      { "name": "储物柜", "children": null },
+      { "name": "宣传牌", "children": null },
+      { "name": "导览牌", "children": null },
+      { "name": "标识牌", "children": null },
+      { "name": "椅子", "children": null },
+      { "name": "电脑", "children": null },
+      { "name": "询问台", "children": null },
+      { "name": "长椅", "children": null }
+    ]
+  },
+  {
+    "name": "教室",
+    "children": [
+      { "name": "book01", "children": null },
+      { "name": "book53", "children": null },
+      { "name": "broom01_1", "children": null },
+      { "name": "broom01_2", "children": null },
+      { "name": "chair01", "children": null },
+      { "name": "desk02", "children": null },
+      { "name": "lamp01_1", "children": null },
+      { "name": "lamp02", "children": null },
+      { "name": "projector01", "children": null },
+      { "name": "screen01_1", "children": null },
+      { "name": "screen01_2", "children": null },
+      { "name": "trashbox01", "children": null },
+      { "name": "tuoba", "children": null }
+        ]
+  },
+  {
+    "name": "服装仓库",
+    "children": [
+      { "name": "主机", "children": null },
+      { "name": "传送带", "children": null },
+      { "name": "分拣车", "children": null },
+      { "name": "包装盒", "children": null },
+      { "name": "塑料周转箱", "children": null },
+      { "name": "夹克", "children": null },
+      { "name": "平板车", "children": null },
+      { "name": "手推车", "children": null },
+      { "name": "打包机", "children": null },
+      { "name": "扫码枪", "children": null },
+      { "name": "播种墙", "children": null },
+      { "name": "显示器", "children": null },
+      { "name": "标识牌a", "children": null },
+      { "name": "标识牌b", "children": null },
+      { "name": "标识牌c", "children": null },
+      { "name": "标识牌cc", "children": null },
+      { "name": "标识牌d", "children": null },
+      { "name": "标识牌dbc", "children": null },
+      { "name": "标识牌ddc", "children": null },
+      { "name": "标识牌fh", "children": null },
+      { "name": "标识牌hj", "children": null },
+      { "name": "标识牌rcbz", "children": null },
+      { "name": "衬衣", "children": null },
+      { "name": "裙子", "children": null },
+      { "name": "裤子", "children": null },
+      { "name": "西装", "children": null },
+      { "name": "西裤", "children": null },
+      { "name": "货架", "children": null },
+      { "name": "运输", "children": null },
+      { "name": "键盘", "children": null },
+      { "name": "鼠标", "children": null }
+    ]
+  },
+  {
+    "name": "港口码头",
+    "children": [
+      { "name": "a1", "children": null },
+      { "name": "a2", "children": null },
+      { "name": "a3", "children": null },
+      { "name": "a4", "children": null },
+      { "name": "a5", "children": null },
+      { "name": "a6", "children": null },
+      { "name": "a7", "children": null },
+      { "name": "a8", "children": null },
+      { "name": "a9", "children": null },
+      { "name": "a10", "children": null },
+      { "name": "a11", "children": null },
+      { "name": "b", "children": null },
+      { "name": "b1", "children": null },
+      { "name": "baowen_c", "children": null },
+      { "name": "c", "children": null },
+      { "name": "ContainerSpreader_6m_01", "children": null },
+      { "name": "CraneCable_5m_01", "children": null },
+      { "name": "GantryCrane_01_Traction_01", "children": null },
+      { "name": "GantryCrane_02_Structure_01", "children": null },
+      { "name": "GantryCrane_02_Traction_01", "children": null },
+      { "name": "GantryCrane_02_Trolley_01", "children": null },
+      { "name": "guashi_c", "children": null },
+      { "name": "kaiding_c", "children": null },
+      { "name": "lengcang_c", "children": null },
+      { "name": "qiaoxingqizhongji", "children": null },
+      { "name": "qizhongji", "children": null },
+      { "name": "ShipyardCrane_Bottom_01", "children": null },
+      { "name": "ShipyardCrane_Cabin_01", "children": null },
+      { "name": "ShipyardCrane_Front_01", "children": null },
+      { "name": "ShipyardCrane_Shaft_01", "children": null },
+      { "name": "ShipyardCrane_Top_01", "children": null },
+      { "name": "中型货架", "children": null },
+      { "name": "传送带", "children": null },
+      { "name": "卡车", "children": null },
+      { "name": "叉车", "children": null },
+      { "name": "托盘", "children": null },
+      { "name": "机械臂", "children": null },
+      { "name": "海警船glb", "children": null },
+      { "name": "液压抓斗", "children": null },
+      { "name": "砂船", "children": null },
+      { "name": "货船", "children": null },
+      { "name": "货船2", "children": null },
+      { "name": "轻型货架", "children": null },
+      { "name": "重型货架", "children": null },
+      { "name": "集装箱1", "children": null },
+      { "name": "集装箱2", "children": null },
+      { "name": "集装箱3", "children": null },
+      { "name": "集装箱4", "children": null },
+      { "name": "集装箱5", "children": null }
+    ]
+  },
+  {
+    "name": "水坝",
+    "children": [
+      { "name": "shuiba", "children": null },
+      { "name": "Icosphere", "children": null },
+      { "name": "Torus", "children": null },
+      { "name": "Cone", "children": null },
+      { "name": "Cylinder", "children": null },
+      { "name": "Sphere", "children": null },
+      { "name": "cube", "children": null }
+    ]
+  },
+  {
+    "name": "闸站",
+    "children": [
+      { "name": "shuiba", "children": null }
+    ]
+  }
+]
