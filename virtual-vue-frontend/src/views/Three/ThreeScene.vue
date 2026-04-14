@@ -1448,8 +1448,14 @@ export default {
     handleUnbindModel(panelId) {
       if (this.boundModels[panelId]) {
         delete this.boundModels[panelId];
-        this.$message.success('已解除模型绑定');
       }
+      const panel = this.openedPanels.find(p => p.id === panelId);
+      if (panel) {
+        panel.modelId = null;
+        panel.modelName = null;
+        panel.modelType = null;
+      }
+      this.$message.success('已解除模型绑定');
     },
 
     async bindModelToPanel(model) {

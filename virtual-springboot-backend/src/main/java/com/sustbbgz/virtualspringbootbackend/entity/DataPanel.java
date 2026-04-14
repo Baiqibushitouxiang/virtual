@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -19,14 +20,19 @@ public class DataPanel {
 
     private String description;
 
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Long deviceId;
 
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private String deviceName;
 
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private String modelId;
 
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private String modelName;
 
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private String modelType;
 
     private String position;
