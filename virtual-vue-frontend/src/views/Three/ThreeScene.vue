@@ -165,6 +165,7 @@
           @cancelBind="cancelBind"
           @updatePanel="refreshPanels"
           @deletePanel="handleDeletePanel"
+          @unbindModel="handleUnbindModel"
       />
 
       <!-- 展板管理弹窗 -->
@@ -1442,6 +1443,13 @@ export default {
     cancelBind() {
       this.bindMode = false;
       this.bindingPanelId = null;
+    },
+
+    handleUnbindModel(panelId) {
+      if (this.boundModels[panelId]) {
+        delete this.boundModels[panelId];
+        this.$message.success('已解除模型绑定');
+      }
     },
 
     async bindModelToPanel(model) {

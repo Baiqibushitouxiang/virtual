@@ -114,11 +114,11 @@ public class DataPushService implements DataChangeMonitor.DataChangeListener {
             String[] parts = nodeId.split("\\.");
             if (parts.length >= 2) {
                 String deviceId = parts[1];
-                pushData(deviceId, Map.of(
-                    "nodeId", nodeId,
-                    "value", event.getNewValue().getValue().getValue(),
-                    "timestamp", event.getTimestamp()
-                ));
+                Map<String, Object> data = new HashMap<>();
+                data.put("nodeId", nodeId);
+                data.put("value", event.getNewValue().getValue().getValue());
+                data.put("timestamp", event.getTimestamp());
+                pushData(deviceId, data);
             }
         }
     }

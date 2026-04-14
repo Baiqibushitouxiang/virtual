@@ -15,6 +15,8 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,11 +116,17 @@ public class DeviceDataWebSocketHandler extends TextWebSocketHandler {
                     handleDataMessage(session, data);
                     break;
                 default:
-                    sendMessage(session, Map.of("type", "error", "message", "未知的消息类型"));
+                    Map<String, Object> errorMsg = new HashMap<>();
+                    errorMsg.put("type", "error");
+                    errorMsg.put("message", "未知的消息类型");
+                    sendMessage(session, errorMsg);
             }
         } catch (Exception e) {
             logger.error("处理WebSocket消息失败: sessionId={}", session.getId(), e);
-            sendMessage(session, Map.of("type", "error", "message", e.getMessage()));
+            Map<String, Object> errorResp = new HashMap<>();
+            errorResp.put("type", "error");
+            errorResp.put("message", e.getMessage());
+            sendMessage(session, errorResp);
         }
     }
 
@@ -141,9 +149,17 @@ public class DeviceDataWebSocketHandler extends TextWebSocketHandler {
                 sessionInfo.setDeviceName(result.getDevice().getName());
                 deviceSubscriptions.computeIfAbsent(deviceId, k -> new CopyOnWriteArrayList<>()).add(session);
                 
-                sendMessage(session, Map.of("type", "auth", "success", true, "sessionId", result.getSessionId()));
+                Map<String, Object> successResp = new HashMap<>();
+                successResp.put("type", "auth");
+                successResp.put("success", true);
+                successResp.put("sessionId", result.getSessionId());
+                sendMessage(session, successResp);
             } else {
-                sendMessage(session, Map.of("type", "auth", "success", false, "message", result.getErrorMessage()));
+                Map<String, Object> failResp = new HashMap<>();
+                failResp.put("type", "auth");
+                failResp.put("success", false);
+                failResp.put("message", result.getErrorMessage());
+                sendMessage(session, failResp);
             }
         }
     }
@@ -153,13 +169,20 @@ public class DeviceDataWebSocketHandler extends TextWebSocketHandler {
         
         WebSocketSessionInfo sessionInfo = sessionInfoMap.get(session.getId());
         if (sessionInfo == null || !sessionInfo.isAuthenticated()) {
-            sendMessage(session, Map.of("type", "error", "message", "未认证"));
+            Map<String, Object> notAuthResp = new HashMap<>();
+            notAuthResp.put("type", "error");
+            notAuthResp.put("message", "未认证");
+            sendMessage(session, notAuthResp);
             return;
         }
 
         if (deviceId != null) {
             deviceSubscriptions.computeIfAbsent(deviceId, k -> new CopyOnWriteArrayList<>()).add(session);
-            sendMessage(session, Map.of("type", "subscribe", "success", true, "deviceId", deviceId));
+            Map<String, Object> subResp = new HashMap<>();
+            subResp.put("type", "subscribe");
+            subResp.put("success", true);
+            subResp.put("deviceId", deviceId);
+            sendMessage(session, subResp);
             logger.info("订阅设备: sessionId={}, deviceId={}", session.getId(), deviceId);
         }
     }
@@ -172,14 +195,21 @@ public class DeviceDataWebSocketHandler extends TextWebSocketHandler {
             if (subs != null) {
                 subs.remove(session);
             }
-            sendMessage(session, Map.of("type", "unsubscribe", "success", true, "deviceId", deviceId));
+            Map<String, Object> unsubResp = new HashMap<>();
+            unsubResp.put("type", "unsubscribe");
+            unsubResp.put("success", true);
+            unsubResp.put("deviceId", deviceId);
+            sendMessage(session, unsubResp);
         }
     }
 
     private void handleDataMessage(WebSocketSession session, Map<String, Object> data) {
         WebSocketSessionInfo sessionInfo = sessionInfoMap.get(session.getId());
         if (sessionInfo == null || !sessionInfo.isAuthenticated()) {
-            sendMessage(session, Map.of("type", "error", "message", "未认证"));
+            Map<String, Object> notAuthResp = new HashMap<>();
+            notAuthResp.put("type", "error");
+            notAuthResp.put("message", "未认证");
+            sendMessage(session, notAuthResp);
             return;
         }
 

@@ -3,6 +3,7 @@ package com.sustbbgz.virtualspringbootbackend.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -35,8 +36,8 @@ public class OpcUaConfig {
         private String productUri = "urn:digital-twin:opcua:product";
         private String bindAddress = "0.0.0.0";
         private int port = 4840;
-        private List<String> securityPolicies = List.of("None", "Basic256Sha256");
-        private List<String> securityModes = List.of("None", "SignAndEncrypt");
+        private List<String> securityPolicies = Arrays.asList("None", "Basic256Sha256");
+        private List<String> securityModes = Arrays.asList("None", "SignAndEncrypt");
         private CertificateConfig certificate = new CertificateConfig();
 
         public boolean isEnabled() {

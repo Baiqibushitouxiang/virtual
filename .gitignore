@@ -69,3 +69,4 @@ application-prod.yml
 ### Office Files ###
 *.docx
 *.doc
+virtual-springboot-backend/src/main/resources/application-1.yml

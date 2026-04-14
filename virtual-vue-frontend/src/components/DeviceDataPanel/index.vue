@@ -10,7 +10,7 @@ const props = defineProps({
   bindMode: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['close', 'startBind', 'cancelBind', 'updatePanel', 'deletePanel']);
+const emit = defineEmits(['close', 'startBind', 'cancelBind', 'updatePanel', 'deletePanel', 'unbindModel']);
 
 const deviceData = ref(null);
 const isConnected = ref(false);
@@ -151,6 +151,7 @@ const handleCancelBind = async () => {
   if (props.panelConfig?.id) {
     try {
       await unbindModel(props.panelConfig.id);
+      emit('unbindModel', props.panelConfig.id);
       emit('updatePanel');
     } catch (e) {
       console.error('解绑失败:', e);
