@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { API_CONFIG } from '@/config/apiconfig'
 
 export function listScenes() {
   return request({
@@ -27,6 +28,7 @@ export function uploadScene(file, name, description, id) {
     url: '/api/scenes/upload',
     method: 'post',
     data: formData,
+    timeout: API_CONFIG.uploadTimeout,
     headers: {
       'Content-Type': 'multipart/form-data'
     }

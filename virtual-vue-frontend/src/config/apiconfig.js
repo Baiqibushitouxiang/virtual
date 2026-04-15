@@ -1,7 +1,8 @@
 export const API_CONFIG = {
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:9999',
     wsBaseURL: import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:9999',
-    timeout: 5000
+    timeout: 5000,
+    uploadTimeout: Number(import.meta.env.VITE_API_UPLOAD_TIMEOUT || 600000)
 };
 
 export const EXTERNAL_CONFIG = {
