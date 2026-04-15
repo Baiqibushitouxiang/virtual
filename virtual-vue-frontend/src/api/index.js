@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_CONFIG, STATIC_CONFIG, EXTERNAL_CONFIG, COS_CONFIG, getModelUrl, getSceneUrl } from '../config/apiConfig';
+import { API_CONFIG, EXTERNAL_CONFIG, getModelUrl, getSceneUrl } from '../config/apiconfig';
 import { ElMessage } from 'element-plus'
 
 

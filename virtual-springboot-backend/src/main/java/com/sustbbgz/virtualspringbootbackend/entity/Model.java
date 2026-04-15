@@ -1,6 +1,7 @@
 package com.sustbbgz.virtualspringbootbackend.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("models")
@@ -12,6 +13,9 @@ public class Model {
     private String category;
     private String filePath;
     private String description;
+
+    @TableField(exist = false)
+    private String url;
 
     public Integer getId() {
         return id;
@@ -51,5 +55,13 @@ public class Model {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

@@ -1,4 +1,5 @@
 package com.sustbbgz.virtualspringbootbackend.entity;
+import com.baomidou.mybatisplus.annotation.TableField;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.HashMap;
@@ -11,6 +12,9 @@ public class SceneAsset {
     private String description;
     private LocalDateTime createdAt;
     private String textureInfo; // 存储贴图信息(JSON格式)
+
+    @TableField(exist = false)
+    private String url;
 
     // 默认构造函数
     public SceneAsset() {
@@ -81,6 +85,14 @@ public class SceneAsset {
     
     public void setTextureInfo(String textureInfo) {
         this.textureInfo = textureInfo;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     // toString 方法，便于调试和日志输出

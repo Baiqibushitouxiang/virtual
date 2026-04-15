@@ -66,7 +66,7 @@ public class  ModelController {
             }
             
             String fileName = StringUtils.cleanPath(name + fileExtension);
-            String relativePath = category + "/" + fileName;
+            String relativePath = normalizeRelativePath(category + "/" + fileName);
             String fileUrl;
 
             if ("cos".equalsIgnoreCase(storageType)) {
@@ -120,7 +120,7 @@ public class  ModelController {
     // 获取所有模型列表
     @GetMapping("/")
     public List<Model> getAllModels() {
-        return modelService.list();  // 使用 MyBatis-Plus 获取所有模型
+        return modelService.listWithUrls();  // 使用 MyBatis-Plus 获取所有模型
     }
 
     // 获取单个模型详细信息
@@ -189,5 +189,11 @@ public class  ModelController {
             e.printStackTrace();
             return "模型删除失败，发生异常！";
         }
+    }
+
+    private String normalizeRelativePath(String path) {
+        return path.replace("\\", "/")
+                .replaceAll("/{2,}", "/")
+                .replaceFirst("^/+", "");
     }
 }

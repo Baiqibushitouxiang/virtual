@@ -166,7 +166,9 @@ export default {
 
       this.selectedModels.forEach(model => {
         let fileUrl;
-        if (model.filePath) {
+        if (model.url) {
+          fileUrl = model.url;
+        } else if (model.filePath) {
           fileUrl = getModelPathUrl(model.filePath);
         } else if (model.file) {
           fileUrl = model.file;

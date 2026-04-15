@@ -1562,7 +1562,7 @@ export default {
       try {
         const { getScene } = await import('@/api/scenes');
         const sceneData = await getScene(id)
-        const { fileType, path, name, description } = sceneData
+        const { fileType, path, name, description, url } = sceneData
         this.currentSceneId = sceneData.id || id
         this.currentSceneName = name || ''
         this.currentSceneDescription = description || ''
@@ -1572,7 +1572,7 @@ export default {
           this.initScene()
 
           if (fileType === 'json') {
-            const sceneUrl = this.withCacheBust(path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path))
+            const sceneUrl = this.withCacheBust(url || (path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)))
             fetch(sceneUrl)
                 .then(resp => resp.json())
                 .then(jsonData => {
@@ -1588,7 +1588,7 @@ export default {
 
           if (fileType === 'glb' || fileType === 'gltf') {
             const loader = new GLTFLoader()
-            const sceneUrl = this.withCacheBust(path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path))
+            const sceneUrl = this.withCacheBust(url || (path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)))
             loader.load(
                 sceneUrl,
                 (gltf) => {

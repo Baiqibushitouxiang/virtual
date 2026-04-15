@@ -18,13 +18,15 @@ public class SceneAssetService {
 
     private final SceneAssetMapper mapper;
     private final CosService cosService;
+    private final ResourceUrlService resourceUrlService;
 
     @Value("${storage.type:local}")
     private String storageType;
 
-    public SceneAssetService(SceneAssetMapper mapper, CosService cosService) {
+    public SceneAssetService(SceneAssetMapper mapper, CosService cosService, ResourceUrlService resourceUrlService) {
         this.mapper = mapper;
         this.cosService = cosService;
+        this.resourceUrlService = resourceUrlService;
     }
 
     public SceneAsset upload(MultipartFile file, String name, String description) throws Exception {
@@ -47,7 +49,8 @@ public class SceneAssetService {
         SceneAsset existing = id != null ? mapper.getById(id) : null;
         Long assetId = existing != null ? existing.getId() : (id != null ? id : System.currentTimeMillis());
         String saved = resolveSavedFilename(existing, assetId, ext);
-        String path = "/scenes/" + saved;
+        saved = cleanSceneFilename(saved);
+        String path = "scenes/" + saved;
 
         if ("cos".equalsIgnoreCase(storageType)) {
             cosService.uploadFileToKey(file, "scenes/" + saved);
@@ -74,12 +77,12 @@ public class SceneAssetService {
             mapper.insert(asset);
         }
 
-        return asset;
+        return enrich(asset);
     }
 
     private String resolveSavedFilename(SceneAsset existing, Long assetId, String ext) {
         if (existing != null && existing.getPath() != null) {
-            String saved = extractSceneFilename(existing.getPath());
+            String saved = cleanSceneFilename(extractSceneFilename(existing.getPath()));
             if (saved.toLowerCase().endsWith("." + ext)) {
                 return saved;
             }
@@ -88,11 +91,13 @@ public class SceneAssetService {
     }
 
     public List<SceneAsset> list() {
-        return mapper.list();
+        List<SceneAsset> assets = mapper.list();
+        assets.forEach(this::enrich);
+        return assets;
     }
 
     public SceneAsset get(Long id) {
-        return mapper.getById(id);
+        return enrich(mapper.getById(id));
     }
 
     public void delete(Long id) throws Exception {
@@ -116,12 +121,25 @@ public class SceneAssetService {
     private String extractSceneFilename(String path) {
         int scenesIndex = path.lastIndexOf("/scenes/");
         if (scenesIndex >= 0) {
-            return path.substring(scenesIndex + "/scenes/".length());
+            return cleanSceneFilename(path.substring(scenesIndex + "/scenes/".length()));
         }
-        return path.replaceFirst("^/scenes/", "");
+        return cleanSceneFilename(path.replaceFirst("^/scenes/", ""));
+    }
+
+    private String cleanSceneFilename(String filename) {
+        return filename.replace("\\", "/")
+                .replaceAll("/{2,}", "/")
+                .replaceFirst("^/+", "");
     }
 
     public void updateTextureInfo(Long id, String textureInfo) {
         mapper.updateTextureInfo(id, textureInfo);
+    }
+
+    private SceneAsset enrich(SceneAsset asset) {
+        if (asset != null) {
+            asset.setUrl(resourceUrlService.buildSceneUrl(asset.getPath()));
+        }
+        return asset;
     }
 }

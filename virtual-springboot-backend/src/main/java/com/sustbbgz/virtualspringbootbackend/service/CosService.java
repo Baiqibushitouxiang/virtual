@@ -48,7 +48,7 @@ public class CosService {
 
         String datePath = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
         String newFileName = IdUtil.fastSimpleUUID() + extension;
-        String key = folder + "/" + datePath + "/" + newFileName;
+        String key = cleanKey(folder + "/" + datePath + "/" + newFileName);
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(file.getSize());
@@ -68,7 +68,7 @@ public class CosService {
             throw new IOException("上传文件失败: " + e.getMessage());
         }
 
-        return cosConfig.getBaseUrl() + "/" + key;
+        return joinUrl(cosConfig.getBaseUrl(), key);
     }
 
     public String uploadFileWithRelativePath(MultipartFile file, String relativePath) throws IOException {
@@ -82,7 +82,7 @@ public class CosService {
             throw new IllegalArgumentException("不支持的文件类型: " + extension);
         }
 
-        String key = "models/" + relativePath;
+        String key = cleanKey("models/" + relativePath);
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(file.getSize());
@@ -102,10 +102,11 @@ public class CosService {
             throw new IOException("上传文件失败: " + e.getMessage());
         }
 
-        return cosConfig.getBaseUrl() + "/" + key;
+        return joinUrl(cosConfig.getBaseUrl(), key);
     }
 
     public String uploadFileToKey(MultipartFile file, String key) throws IOException {
+        key = cleanKey(key);
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
             throw new IllegalArgumentException("文件名不能为空");
@@ -134,7 +135,7 @@ public class CosService {
             throw new IOException("上传文件失败: " + e.getMessage());
         }
 
-        return cosConfig.getBaseUrl() + "/" + key;
+        return joinUrl(cosConfig.getBaseUrl(), key);
     }
 
     public String uploadLocalFile(File localFile, String relativePath) throws IOException {
@@ -148,7 +149,7 @@ public class CosService {
             return null;
         }
 
-        String key = relativePath;
+        String key = cleanKey(relativePath);
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(localFile.length());
@@ -168,7 +169,7 @@ public class CosService {
             throw new IOException("上传文件失败: " + e.getMessage());
         }
 
-        return cosConfig.getBaseUrl() + "/" + key;
+        return joinUrl(cosConfig.getBaseUrl(), key);
     }
 
     public String uploadFile(byte[] data, String fileName, String folder, String contentType) throws IOException {
@@ -179,7 +180,7 @@ public class CosService {
 
         String datePath = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
         String newFileName = IdUtil.fastSimpleUUID() + extension;
-        String key = folder + "/" + datePath + "/" + newFileName;
+        String key = cleanKey(folder + "/" + datePath + "/" + newFileName);
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(data.length);
@@ -199,7 +200,7 @@ public class CosService {
             throw new IOException("上传文件失败: " + e.getMessage());
         }
 
-        return cosConfig.getBaseUrl() + "/" + key;
+        return joinUrl(cosConfig.getBaseUrl(), key);
     }
 
     public void deleteFile(String fileUrl) {
@@ -224,6 +225,7 @@ public class CosService {
         if (key == null || key.isEmpty()) {
             return;
         }
+        key = cleanKey(key);
 
         try {
             cosClient.deleteObject(cosConfig.getBucketName(), key);
@@ -252,14 +254,24 @@ public class CosService {
     }
 
     public String getFileUrl(String relativePath) {
-        return cosConfig.getBaseUrl() + "/models/" + relativePath;
+        return joinUrl(cosConfig.getBaseUrl(), cleanKey("models/" + relativePath));
     }
 
     private String extractKeyFromUrl(String fileUrl) {
         if (fileUrl.startsWith(cosConfig.getBaseUrl())) {
-            return fileUrl.substring(cosConfig.getBaseUrl().length() + 1);
+            return cleanKey(fileUrl.substring(cosConfig.getBaseUrl().length() + 1));
         }
         return null;
+    }
+
+    private String cleanKey(String key) {
+        return key.replace("\\", "/")
+                .replaceAll("/{2,}", "/")
+                .replaceFirst("^/+", "");
+    }
+
+    private String joinUrl(String base, String key) {
+        return base.replaceAll("/+$", "") + "/" + cleanKey(key);
     }
 
     private String getFileExtension(String filename) {

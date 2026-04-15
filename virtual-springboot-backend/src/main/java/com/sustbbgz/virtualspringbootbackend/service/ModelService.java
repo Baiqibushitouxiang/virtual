@@ -20,6 +20,9 @@ public class ModelService extends ServiceImpl<ModelMapper, Model> {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private ResourceUrlService resourceUrlService;
+
     // 批量插入模型数据
     public void importModels(List<Model> models) {
         // 直接使用 MyBatis-Plus 的 saveBatch 方法来批量插入
@@ -29,7 +32,7 @@ public class ModelService extends ServiceImpl<ModelMapper, Model> {
     // 获取模型菜单（树形结构）
     public List<ModelCategoryNode> getModelMenu() {
         // 查询所有模型
-        List<Model> allModels = this.list();
+        List<Model> allModels = listWithUrls();
 
         // 按照分类进行分组
         Map<String, List<Model>> categoryMap = allModels.stream()
@@ -60,6 +63,7 @@ public class ModelService extends ServiceImpl<ModelMapper, Model> {
                     ModelCategoryNode modelNode = new ModelCategoryNode();
                     modelNode.setName(model.getName());
                     modelNode.setFilePath(model.getFilePath());
+                    modelNode.setUrl(model.getUrl());
                     modelNode.setChildren(null);
                     return modelNode;
                 }).collect(Collectors.toList());
@@ -76,6 +80,7 @@ public class ModelService extends ServiceImpl<ModelMapper, Model> {
                 ModelCategoryNode modelNode = new ModelCategoryNode();
                 modelNode.setName(model.getName());
                 modelNode.setFilePath(model.getFilePath());
+                modelNode.setUrl(model.getUrl());
                     modelNode.setChildren(null);
                 return modelNode;
             }).collect(Collectors.toList());
@@ -109,11 +114,22 @@ public class ModelService extends ServiceImpl<ModelMapper, Model> {
     }
 
     public Model getByName(String name) {
-        return this.lambdaQuery().eq(Model::getName, name).one();
+        return enrich(this.lambdaQuery().eq(Model::getName, name).one());
     }
     
     public Model getById(Long id) {
-        return this.lambdaQuery().eq(Model::getId, id).one();
+        return enrich(this.lambdaQuery().eq(Model::getId, id).one());
+    }
+
+    public List<Model> listWithUrls() {
+        return this.list().stream().map(this::enrich).collect(Collectors.toList());
+    }
+
+    public Model enrich(Model model) {
+        if (model != null) {
+            model.setUrl(resourceUrlService.buildModelUrl(model.getFilePath()));
+        }
+        return model;
     }
 
     public Map<String, Integer> getTopCategoryModelCount() {
