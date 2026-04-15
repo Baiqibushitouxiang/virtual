@@ -70,3 +70,4 @@ application-prod.yml
 *.docx
 *.doc
 virtual-springboot-backend/src/main/resources/application-1.yml
+virtual-springboot-backend/src/main/resources/application.yml

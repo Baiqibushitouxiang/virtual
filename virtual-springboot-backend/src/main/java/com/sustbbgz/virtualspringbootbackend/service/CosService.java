@@ -25,7 +25,7 @@ public class CosService {
 
     private static final Logger logger = LoggerFactory.getLogger(CosService.class);
 
-    @Autowired
+    @Autowired(required = false)
     private COSClient cosClient;
 
     @Autowired
@@ -35,7 +35,14 @@ public class CosService {
             ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".json", ".mtl"
     };
 
+    private void requireCosClient() {
+        if (cosClient == null) {
+            throw new IllegalStateException("COSClient 未初始化，请确认 storage.type=cos 且 COS 配置完整");
+        }
+    }
+
     public String uploadFile(MultipartFile file, String folder) throws IOException {
+        requireCosClient();
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
             throw new IllegalArgumentException("文件名不能为空");
@@ -72,6 +79,7 @@ public class CosService {
     }
 
     public String uploadFileWithRelativePath(MultipartFile file, String relativePath) throws IOException {
+        requireCosClient();
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
             throw new IllegalArgumentException("文件名不能为空");
@@ -106,6 +114,7 @@ public class CosService {
     }
 
     public String uploadFileToKey(MultipartFile file, String key) throws IOException {
+        requireCosClient();
         key = cleanKey(key);
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
@@ -139,6 +148,7 @@ public class CosService {
     }
 
     public String uploadLocalFile(File localFile, String relativePath) throws IOException {
+        requireCosClient();
         if (!localFile.exists()) {
             throw new IOException("文件不存在: " + localFile.getAbsolutePath());
         }
@@ -173,6 +183,7 @@ public class CosService {
     }
 
     public String uploadFile(byte[] data, String fileName, String folder, String contentType) throws IOException {
+        requireCosClient();
         String extension = getFileExtension(fileName);
         if (!isAllowedExtension(extension)) {
             throw new IllegalArgumentException("不支持的文件类型: " + extension);
@@ -204,6 +215,7 @@ public class CosService {
     }
 
     public void deleteFile(String fileUrl) {
+        requireCosClient();
         if (fileUrl == null || fileUrl.isEmpty()) {
             return;
         }
@@ -222,6 +234,7 @@ public class CosService {
     }
 
     public void deleteObjectByKey(String key) {
+        requireCosClient();
         if (key == null || key.isEmpty()) {
             return;
         }
@@ -236,6 +249,7 @@ public class CosService {
     }
 
     public boolean fileExists(String fileUrl) {
+        requireCosClient();
         if (fileUrl == null || fileUrl.isEmpty()) {
             return false;
         }
