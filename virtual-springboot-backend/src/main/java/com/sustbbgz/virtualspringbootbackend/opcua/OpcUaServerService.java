@@ -128,9 +128,14 @@ public class OpcUaServerService {
         if (deviceDataService != null) {
             deviceNamespace.setTemperatureDataCallback((deviceId, temperature) -> {
                 try {
+                    if (deviceService != null && !deviceService.isDeviceEnabled(deviceId)) {
+                        deviceNamespace.setDeviceStatus(deviceId, "Disabled");
+                        logger.warn("Ignored temperature data from disabled or unknown device: {}", deviceId);
+                        return;
+                    }
                     deviceDataService.saveDeviceData(deviceId, "temperature", temperature, "°C");
                     if (deviceService != null) {
-                        deviceService.updateOnlineStatus(deviceId, 1);
+                        deviceService.markDeviceSeen(deviceId);
                     }
                     deviceNamespace.setDeviceStatus(deviceId, "Online");
                 } catch (Exception e) {
@@ -141,7 +146,12 @@ public class OpcUaServerService {
         
         deviceNamespace.setDeviceDataCallback((deviceId, value) -> {
             if (deviceService != null) {
-                deviceService.updateOnlineStatus(deviceId, 1);
+                if (!deviceService.isDeviceEnabled(deviceId)) {
+                    deviceNamespace.setDeviceStatus(deviceId, "Disabled");
+                    logger.warn("Ignored OPC UA data from disabled or unknown device: {}", deviceId);
+                    return;
+                }
+                deviceService.markDeviceSeen(deviceId);
             }
             deviceNamespace.setDeviceStatus(deviceId, "Online");
         });

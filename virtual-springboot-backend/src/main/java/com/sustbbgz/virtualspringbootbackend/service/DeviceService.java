@@ -35,7 +35,7 @@ public class DeviceService extends ServiceImpl<DeviceMapper, Device> {
         if (device.getStatus() == null) {
             device.setStatus(1);
         }
-        device.setLastSeenAt(LocalDateTime.now());
+        device.setLastSeenAt(null);
         save(device);
         
         createOpcUaDeviceNode(device.getDeviceId(), device.getName());
@@ -153,11 +153,20 @@ public class DeviceService extends ServiceImpl<DeviceMapper, Device> {
     }
 
     public void updateOnlineStatus(String deviceId, Integer status) {
+        markDeviceSeen(deviceId);
+    }
+
+    public boolean markDeviceSeen(String deviceId) {
         Device device = getByDeviceId(deviceId);
-        if (device != null) {
-            device.setStatus(status);
+        if (device != null && device.getStatus() != null && device.getStatus() == 1) {
             device.setLastSeenAt(LocalDateTime.now());
-            updateById(device);
+            return updateById(device);
         }
+        return false;
+    }
+
+    public boolean isDeviceEnabled(String deviceId) {
+        Device device = getByDeviceId(deviceId);
+        return device != null && device.getStatus() != null && device.getStatus() == 1;
     }
 }

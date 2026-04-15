@@ -52,11 +52,17 @@
 
       <el-table :data="filteredDevices" style="width: 100%" v-loading="loading">
         <el-table-column prop="name" label="设备ID" width="180" />
-        <el-table-column prop="status" label="状态" width="120">
+        <el-table-column label="在线状态" width="120">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'Online' ? 'success' : 'info'">
-              {{ scope.row.status }}
+            <el-tag :type="scope.row.online ? 'success' : (scope.row.enabled ? 'info' : 'danger')">
+              {{ scope.row.online ? '在线' : (scope.row.enabled ? '离线' : '禁用') }}
             </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="OPC UA节点" width="130" />
+        <el-table-column label="最后上报" width="180">
+          <template #default="scope">
+            {{ formatTime(scope.row.lastSeenAt) }}
           </template>
         </el-table-column>
         <el-table-column prop="data" label="数据">
@@ -103,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Refresh, Connection, Plus, Search } from '@element-plus/icons-vue';
 import { getOpcUaStatus, syncOpcUaDevices, createOpcUaDevice, deleteOpcUaDevice } from '@/api/index.js';
@@ -116,6 +122,7 @@ const searchText = ref('');
 const createDialogVisible = ref(false);
 const dataDialogVisible = ref(false);
 const deviceDataContent = ref('');
+let refreshTimer = null;
 
 const createForm = ref({
   deviceName: '',
@@ -131,8 +138,8 @@ const filteredDevices = computed(() => {
   );
 });
 
-const refreshStatus = async () => {
-  loading.value = true;
+const refreshStatus = async (silent = false) => {
+  if (!silent) loading.value = true;
   try {
     const response = await getOpcUaStatus();
     status.value = response.data.data;
@@ -140,8 +147,13 @@ const refreshStatus = async () => {
     ElMessage.error('获取OPC UA状态失败');
     console.error(error);
   } finally {
-    loading.value = false;
+    if (!silent) loading.value = false;
   }
+};
+
+const formatTime = (time) => {
+  if (!time) return '-';
+  return new Date(time).toLocaleString('zh-CN');
 };
 
 const syncDevices = async () => {
@@ -216,6 +228,14 @@ const deleteDeviceNode = async (device) => {
 
 onMounted(() => {
   refreshStatus();
+  refreshTimer = window.setInterval(() => refreshStatus(true), 10000);
+});
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    window.clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 });
 </script>
 

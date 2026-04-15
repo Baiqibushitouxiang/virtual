@@ -40,17 +40,15 @@ public class DeviceStatusCheckTask {
             
             LocalDateTime lastSeen = device.getLastSeenAt();
             if (lastSeen == null) {
-                deviceService.updateStatus(device.getId(), 0);
                 updateOpcUaStatus(device.getDeviceId(), "Offline");
-                logger.info("设备 {} 从未上线，标记为离线", device.getDeviceId());
+                logger.info("设备 {} 从未上线，标记OPC UA为离线", device.getDeviceId());
                 continue;
             }
             
             long seconds = ChronoUnit.SECONDS.between(lastSeen, now);
             if (seconds > OFFLINE_THRESHOLD_SECONDS) {
-                deviceService.updateStatus(device.getId(), 0);
                 updateOpcUaStatus(device.getDeviceId(), "Offline");
-                logger.info("设备 {} 超时 {} 秒未活动，标记为离线", device.getDeviceId(), seconds);
+                logger.info("设备 {} 超时 {} 秒未活动，标记OPC UA为离线", device.getDeviceId(), seconds);
             }
         }
     }

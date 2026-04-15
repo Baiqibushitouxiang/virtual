@@ -1572,7 +1572,7 @@ export default {
           this.initScene()
 
           if (fileType === 'json') {
-            const sceneUrl = path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)
+            const sceneUrl = this.withCacheBust(path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path))
             fetch(sceneUrl)
                 .then(resp => resp.json())
                 .then(jsonData => {
@@ -1588,7 +1588,7 @@ export default {
 
           if (fileType === 'glb' || fileType === 'gltf') {
             const loader = new GLTFLoader()
-            const sceneUrl = path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)
+            const sceneUrl = this.withCacheBust(path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path))
             loader.load(
                 sceneUrl,
                 (gltf) => {
@@ -1615,6 +1615,11 @@ export default {
         console.error('加载场景库失败', e)
         this.$message.error('加载场景失败')
       }
+    },
+
+    withCacheBust(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${Date.now()}`;
     },
     
     // 加载场景贴图信息

@@ -19,6 +19,13 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="在线状态" width="100">
+          <template #default="scope">
+            <el-tag :type="isOnline(scope.row) ? 'success' : 'info'">
+              {{ isOnline(scope.row) ? '在线' : '离线' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="certificateThumbprint" label="证书状态" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.certificateThumbprint ? 'success' : 'info'">
@@ -115,7 +122,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import deviceApi from '../../api/device';
 
@@ -129,6 +136,7 @@ export default {
     const certificateDialogVisible = ref(false);
     const currentDevice = ref(null);
     const certificateData = ref(null);
+    let refreshTimer = null;
 
     const registerForm = ref({
       name: '',
@@ -142,8 +150,8 @@ export default {
       userId: null
     });
 
-    const loadDevices = async () => {
-      loading.value = true;
+    const loadDevices = async (silent = false) => {
+      if (!silent) loading.value = true;
       try {
         const response = await deviceApi.getDevices();
         if (response.data) {
@@ -152,7 +160,7 @@ export default {
       } catch (error) {
         ElMessage.error('加载设备列表失败');
       } finally {
-        loading.value = false;
+        if (!silent) loading.value = false;
       }
     };
 
@@ -299,8 +307,22 @@ export default {
       return new Date(time).toLocaleString('zh-CN');
     };
 
+    const isOnline = (device) => {
+      if (!device || device.status !== 1 || !device.lastSeenAt) return false;
+      const lastSeen = new Date(device.lastSeenAt).getTime();
+      return Number.isFinite(lastSeen) && Date.now() - lastSeen <= 30000;
+    };
+
     onMounted(() => {
       loadDevices();
+      refreshTimer = window.setInterval(() => loadDevices(true), 10000);
+    });
+
+    onUnmounted(() => {
+      if (refreshTimer) {
+        window.clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
     });
 
     return {
@@ -324,7 +346,8 @@ export default {
       generateCertificate,
       revokeCertificate,
       downloadCertificate,
-      formatTime
+      formatTime,
+      isOnline
     };
   }
 };

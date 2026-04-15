@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class OpcUaController {
 
     private static final Logger logger = LoggerFactory.getLogger(OpcUaController.class);
+    private static final int ONLINE_THRESHOLD_SECONDS = 30;
 
     private final OpcUaServerService opcUaServerService;
     private final DeviceService deviceService;
@@ -45,12 +48,28 @@ public class OpcUaController {
                 device.put("objectId", deviceNode.getObjectId().toString());
                 device.put("data", deviceNode.getData());
                 device.put("status", deviceNode.getStatus());
+                Device dbDevice = deviceService.getByDeviceId(deviceNode.getName());
+                if (dbDevice != null) {
+                    boolean enabled = dbDevice.getStatus() != null && dbDevice.getStatus() == 1;
+                    boolean recentlySeen = isRecentlySeen(dbDevice.getLastSeenAt());
+                    device.put("enabled", enabled);
+                    device.put("lastSeenAt", dbDevice.getLastSeenAt());
+                    device.put("online", enabled && recentlySeen && "Online".equals(deviceNode.getStatus()));
+                } else {
+                    device.put("enabled", false);
+                    device.put("online", false);
+                }
                 devices.add(device);
             }
             data.put("devices", devices);
         }
 
         return Result.success(data);
+    }
+
+    private boolean isRecentlySeen(LocalDateTime lastSeenAt) {
+        return lastSeenAt != null
+            && ChronoUnit.SECONDS.between(lastSeenAt, LocalDateTime.now()) <= ONLINE_THRESHOLD_SECONDS;
     }
 
     @PostMapping("/device")
