@@ -105,6 +105,38 @@ public class CosService {
         return cosConfig.getBaseUrl() + "/" + key;
     }
 
+    public String uploadFileToKey(MultipartFile file, String key) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new IllegalArgumentException("文件名不能为空");
+        }
+
+        String extension = getFileExtension(originalFilename);
+        if (!isAllowedExtension(extension)) {
+            throw new IllegalArgumentException("不支持的文件类型: " + extension);
+        }
+
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentLength(file.getSize());
+        metadata.setContentType(getContentType(extension));
+
+        try (InputStream inputStream = file.getInputStream()) {
+            PutObjectRequest putRequest = new PutObjectRequest(
+                    cosConfig.getBucketName(),
+                    key,
+                    inputStream,
+                    metadata
+            );
+            PutObjectResult result = cosClient.putObject(putRequest);
+            logger.info("文件上传成功, Key: {}, ETag: {}", key, result.getETag());
+        } catch (CosClientException e) {
+            logger.error("上传文件到COS失败: {}", e.getMessage());
+            throw new IOException("上传文件失败: " + e.getMessage());
+        }
+
+        return cosConfig.getBaseUrl() + "/" + key;
+    }
+
     public String uploadLocalFile(File localFile, String relativePath) throws IOException {
         if (!localFile.exists()) {
             throw new IOException("文件不存在: " + localFile.getAbsolutePath());
@@ -177,6 +209,19 @@ public class CosService {
 
         String key = extractKeyFromUrl(fileUrl);
         if (key == null) {
+            return;
+        }
+
+        try {
+            cosClient.deleteObject(cosConfig.getBucketName(), key);
+            logger.info("文件删除成功: {}", key);
+        } catch (CosClientException e) {
+            logger.error("删除COS文件失败: {}", e.getMessage());
+        }
+    }
+
+    public void deleteObjectByKey(String key) {
+        if (key == null || key.isEmpty()) {
             return;
         }
 

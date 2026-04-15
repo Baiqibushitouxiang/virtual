@@ -278,6 +278,9 @@ export default {
   data() {
     return {
       selectedModel: null,
+      currentSceneId: null,
+      currentSceneName: '',
+      currentSceneDescription: '',
       sceneLoaded: false,
       isModelSelectorVisible: false,
       isCompositeModelSelectorVisible: false,
@@ -330,6 +333,7 @@ export default {
   mounted() {
     const sceneId = this.$route?.query?.sceneId
     if (sceneId) {
+      this.currentSceneId = sceneId
       this.loadFromSceneLibrary(sceneId)
     }
     
@@ -380,7 +384,10 @@ export default {
     '$route.query.sceneId': {
       immediate: false,
       handler(v) {
-        if (v) this.loadFromSceneLibrary(v)
+        if (v) {
+          this.currentSceneId = v
+          this.loadFromSceneLibrary(v)
+        }
       }
     }
   },
@@ -444,6 +451,9 @@ export default {
     },
     
     async createNewScene() {
+      this.currentSceneId = null;
+      this.currentSceneName = '';
+      this.currentSceneDescription = '';
       this.sceneLoaded = true;
       this.$nextTick(() => {
         this.initScene();
@@ -638,8 +648,8 @@ export default {
           child !== this.helperGroup && child.isGroup
       ).length;
 
-      this.saveForm.name = `场景_${new Date().toLocaleDateString()}_${modelCount}个模型`;
-      this.saveForm.description = '';
+      this.saveForm.name = this.currentSceneName || `场景_${new Date().toLocaleDateString()}_${modelCount}个模型`;
+      this.saveForm.description = this.currentSceneDescription || '';
       this.saveDialogVisible = true;
     },
 
@@ -663,10 +673,18 @@ export default {
           type: 'application/octet-stream'
         });
 
-        const sceneAsset = await uploadScene(file, this.saveForm.name.trim(), this.saveForm.description.trim());
+        const sceneAsset = await uploadScene(
+            file,
+            this.saveForm.name.trim(),
+            this.saveForm.description.trim(),
+            this.currentSceneId
+        );
         
         // 保存贴图信息
         if (sceneAsset && sceneAsset.id) {
+          this.currentSceneId = sceneAsset.id;
+          this.currentSceneName = sceneAsset.name || this.saveForm.name.trim();
+          this.currentSceneDescription = sceneAsset.description || this.saveForm.description.trim();
           const texturesToSave = this.saveSceneTextures(sceneAsset.id);
           if (texturesToSave.length > 0) {
             const textureInfo = JSON.stringify(Object.fromEntries(this.textureCache));
@@ -966,6 +984,9 @@ export default {
     },
 
     async importScene() {
+      this.currentSceneId = null;
+      this.currentSceneName = '';
+      this.currentSceneDescription = '';
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.json,.glb,.gltf';
@@ -1541,14 +1562,17 @@ export default {
       try {
         const { getScene } = await import('@/api/scenes');
         const sceneData = await getScene(id)
-        const { fileType, path, name } = sceneData
+        const { fileType, path, name, description } = sceneData
+        this.currentSceneId = sceneData.id || id
+        this.currentSceneName = name || ''
+        this.currentSceneDescription = description || ''
 
         this.sceneLoaded = true
         this.$nextTick(() => {
           this.initScene()
 
           if (fileType === 'json') {
-            const sceneUrl = getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)
+            const sceneUrl = path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)
             fetch(sceneUrl)
                 .then(resp => resp.json())
                 .then(jsonData => {
@@ -1564,7 +1588,7 @@ export default {
 
           if (fileType === 'glb' || fileType === 'gltf') {
             const loader = new GLTFLoader()
-            const sceneUrl = getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)
+            const sceneUrl = path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)
             loader.load(
                 sceneUrl,
                 (gltf) => {

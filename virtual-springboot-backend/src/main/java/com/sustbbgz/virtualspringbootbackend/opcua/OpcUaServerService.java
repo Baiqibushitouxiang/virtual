@@ -132,6 +132,7 @@ public class OpcUaServerService {
                     if (deviceService != null) {
                         deviceService.updateOnlineStatus(deviceId, 1);
                     }
+                    deviceNamespace.setDeviceStatus(deviceId, "Online");
                 } catch (Exception e) {
                     logger.warn("Failed to persist temperature data for device {}: {}", deviceId, e.getMessage());
                 }
@@ -142,6 +143,7 @@ public class OpcUaServerService {
             if (deviceService != null) {
                 deviceService.updateOnlineStatus(deviceId, 1);
             }
+            deviceNamespace.setDeviceStatus(deviceId, "Online");
         });
         
         deviceNamespace.startup();

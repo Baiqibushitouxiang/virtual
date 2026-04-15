@@ -14,11 +14,14 @@ export function getScene(id) {
   })
 }
 
-export function uploadScene(file, name, description) {
+export function uploadScene(file, name, description, id) {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('name', name)
   formData.append('description', description || '')
+  if (id) {
+    formData.append('id', id)
+  }
 
   return request({
     url: '/api/scenes/upload',

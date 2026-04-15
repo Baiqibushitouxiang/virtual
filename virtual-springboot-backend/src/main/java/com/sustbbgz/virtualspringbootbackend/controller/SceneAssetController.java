@@ -21,9 +21,10 @@ public class SceneAssetController {
     @PostMapping("/upload")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
                                              @RequestParam(value = "name", required = false) String name,
-                                             @RequestParam(value = "description", required = false) String description) {
+                                             @RequestParam(value = "description", required = false) String description,
+                                             @RequestParam(value = "id", required = false) Long id) {
         try {
-            SceneAsset a = service.upload(file, name, description);
+            SceneAsset a = service.upload(file, name, description, id);
             return ResponseEntity.ok(a);
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,10 +1,12 @@
 package com.sustbbgz.virtualspringbootbackend.task;
 
 import com.sustbbgz.virtualspringbootbackend.entity.Device;
+import com.sustbbgz.virtualspringbootbackend.opcua.OpcUaServerService;
 import com.sustbbgz.virtualspringbootbackend.service.DeviceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +24,10 @@ public class DeviceStatusCheckTask {
     @Autowired
     private DeviceService deviceService;
 
+    @Autowired(required = false)
+    @Lazy
+    private OpcUaServerService opcUaServerService;
+
     @Scheduled(fixedRate = 10000)
     public void checkDeviceStatus() {
         List<Device> devices = deviceService.list();
@@ -35,6 +41,7 @@ public class DeviceStatusCheckTask {
             LocalDateTime lastSeen = device.getLastSeenAt();
             if (lastSeen == null) {
                 deviceService.updateStatus(device.getId(), 0);
+                updateOpcUaStatus(device.getDeviceId(), "Offline");
                 logger.info("设备 {} 从未上线，标记为离线", device.getDeviceId());
                 continue;
             }
@@ -42,8 +49,15 @@ public class DeviceStatusCheckTask {
             long seconds = ChronoUnit.SECONDS.between(lastSeen, now);
             if (seconds > OFFLINE_THRESHOLD_SECONDS) {
                 deviceService.updateStatus(device.getId(), 0);
+                updateOpcUaStatus(device.getDeviceId(), "Offline");
                 logger.info("设备 {} 超时 {} 秒未活动，标记为离线", device.getDeviceId(), seconds);
             }
+        }
+    }
+
+    private void updateOpcUaStatus(String deviceId, String status) {
+        if (opcUaServerService != null && opcUaServerService.isRunning() && opcUaServerService.getDeviceNamespace() != null) {
+            opcUaServerService.getDeviceNamespace().setDeviceStatus(deviceId, status);
         }
     }
 }

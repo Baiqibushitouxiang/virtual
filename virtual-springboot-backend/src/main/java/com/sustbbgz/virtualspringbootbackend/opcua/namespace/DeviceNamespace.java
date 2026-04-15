@@ -156,13 +156,10 @@ public class DeviceNamespace extends ManagedNamespaceWithLifecycle {
             deviceFolder.addOrganizes(dataNode);
 
             NodeId statusNodeId = new NodeId(namespaceIndex, "Device_" + deviceName + "_Status");
-            DeviceDataVariableNode statusNode = new DeviceDataVariableNode(
-                getNodeContext(),
+            UaVariableNode statusNode = createWritableVariable(
                 statusNodeId,
                 new QualifiedName(namespaceIndex, "Status"),
-                new LocalizedText("Status"),
-                deviceName,
-                deviceDataCallback
+                new LocalizedText("Status")
             );
             statusNode.setDataType(Identifiers.String);
             statusNode.setValue(new DataValue(new Variant("Offline")));

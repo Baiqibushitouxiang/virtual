@@ -9,6 +9,9 @@ public interface SceneAssetMapper {
     @Insert("INSERT INTO scene_assets (id, name, file_type, path, description, texture_info) VALUES (#{id}, #{name}, #{fileType}, #{path}, #{description}, #{textureInfo})")
     int insert(SceneAsset a);
 
+    @Update("UPDATE scene_assets SET name = #{name}, file_type = #{fileType}, path = #{path}, description = #{description}, texture_info = #{textureInfo} WHERE id = #{id}")
+    int update(SceneAsset a);
+
     @Select("SELECT * FROM scene_assets ORDER BY created_at DESC")
     List<SceneAsset> list();
 

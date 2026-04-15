@@ -32,6 +32,9 @@ export function getModelUrl(path) {
 }
 
 export function getSceneUrl(path) {
+    if (/^https?:\/\//i.test(path)) {
+        return path;
+    }
     if (COS_CONFIG.enabled && COS_CONFIG.baseUrl) {
         return normalizePath(COS_CONFIG.baseUrl, path);
     }
