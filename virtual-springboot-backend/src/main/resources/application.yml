@@ -10,8 +10,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 200MB
-      max-request-size: 200MB
+      max-file-size: 2000MB
+      max-request-size: 2000MB
   thymeleaf:
     enabled: false
   jpa:
@@ -46,8 +46,8 @@ opcua:
       generate-if-missing: true
   client:
     enabled: true
-    connection-timeout: 5000
-    session-timeout: 60000
+    connection-timeout: 50000
+    session-timeout: 100000
 
 tencent:
   cos:
@@ -59,3 +59,16 @@ tencent:
 
 storage:
   type: ${STORAGE_TYPE:cos}
+
+alert:
+  notify:
+    wecom:
+      enabled: ${ALERT_NOTIFY_WECOM_ENABLED:true}
+      webhook-url: ${ALERT_NOTIFY_WECOM_WEBHOOK_URL:https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=930b2554-2ec2-4c3d-af54-042e11cbcda5}
+      connect-timeout-millis: ${ALERT_NOTIFY_WECOM_CONNECT_TIMEOUT_MILLIS:3000}
+      read-timeout-millis: ${ALERT_NOTIFY_WECOM_READ_TIMEOUT_MILLIS:5000}
+
+logging:
+  charset:
+    console: UTF-8
+    file: UTF-8

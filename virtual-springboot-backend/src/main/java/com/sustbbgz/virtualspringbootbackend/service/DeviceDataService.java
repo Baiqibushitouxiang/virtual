@@ -31,6 +31,10 @@ public class DeviceDataService extends ServiceImpl<DeviceDataMapper, DeviceData>
     @Lazy
     private DeviceService deviceService;
 
+    @Autowired(required = false)
+    @Lazy
+    private AlertRuleService alertRuleService;
+
     public static class DeviceDataStats {
         private Double avgValue;
         private Double minValue;
@@ -67,6 +71,10 @@ public class DeviceDataService extends ServiceImpl<DeviceDataMapper, DeviceData>
             dataMap.put("unit", unit);
             dataPushService.pushData(deviceId, "deviceData", dataMap);
             logger.debug("Pushed device data to WebSocket: deviceId={}, type={}, value={}", deviceId, dataType, value);
+        }
+
+        if (alertRuleService != null) {
+            alertRuleService.evaluateRules(deviceId, dataType, value);
         }
         
         return deviceData;

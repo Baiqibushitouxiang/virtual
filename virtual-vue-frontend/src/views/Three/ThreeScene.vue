@@ -145,7 +145,10 @@
       <ObjectInfo
           v-if="selectedModel && sceneLoaded && !showGateStation"
           :selectedModel="selectedModel"
+          :sceneId="currentSceneId"
           @bind-data="bindData"
+          @save-model-binding="handleSaveModelBinding"
+          @remove-model-binding="handleRemoveModelBinding"
           @delete-model="handleDeleteModel"
           @environment-change="handleEnvironmentChange"
           @apply-texture="handleApplyTexture"
@@ -159,6 +162,7 @@
           :visible="true"
           :panelConfig="panel"
           :boundModel="boundModels[panel.id]"
+          :modelBinding="panelBindings[panel.id] || null"
           :bindMode="bindMode && bindingPanelId === panel.id"
           @close="closePanel(panel)"
           @startBind="startBindMode"
@@ -251,6 +255,7 @@
 import { createCompositeModel, getCompositeModelComponents, getModelMenu, getFileUrl, getModelStaticUrl, getModelPathUrl, getScenePathUrl, getGateStationUrl } from "@/api/index.js";
 import { uploadScene, saveSceneTextures, getScene } from '@/api/scenes';
 import { getDataPanels, createDataPanel, deleteDataPanel, bindModel as bindModelApi } from '@/api/dataPanel';
+import { getModelBindings, createModelBinding, updateModelBinding, deleteModelBindingBySceneAndModel } from '@/api/modelBinding';
 import { Loading } from '@element-plus/icons-vue';
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -313,6 +318,7 @@ export default {
       showPanelManager: false,
       openedPanels: [],
       allPanels: [],
+      modelBindings: [],
       bindMode: false,
       bindingPanelId: null,
       boundModels: {},
@@ -325,8 +331,17 @@ export default {
     openedPanelIds() {
       return this.openedPanels.map(p => p.id);
     },
+    panelBindings() {
+      return this.openedPanels.reduce((acc, panel) => {
+        const binding = this.getBindingForPanel(panel);
+        if (binding) {
+          acc[panel.id] = binding;
+        }
+        return acc;
+      }, {});
+    },
     boundPanelsCount() {
-      return this.allPanels.filter(p => p.deviceId || p.modelId).length;
+      return this.allPanels.filter(p => p.modelId).length;
     }
   },
 
@@ -338,6 +353,7 @@ export default {
     }
     
     this.loadAllPanels();
+    this.loadSceneBindings();
     
     this.$nextTick(() => {
       setTimeout(() => {
@@ -387,12 +403,160 @@ export default {
         if (v) {
           this.currentSceneId = v
           this.loadFromSceneLibrary(v)
+          this.loadSceneBindings(v)
         }
       }
     }
   },
 
   methods: {
+    getModelStorageId(model) {
+      return model?.userData?.sceneModelId || model?.uuid || model?.name;
+    },
+
+    normalizeBindingPayload(binding) {
+      return {
+        ...binding,
+        sceneId: binding.sceneId || this.currentSceneId,
+        modelId: binding.modelId,
+        modelName: binding.modelName || '',
+        ruleStatus: binding.ruleStatus ?? 1
+      };
+    },
+
+    buildSceneMetadataPayload() {
+      return {
+        version: '1.0.0',
+        textures: Object.fromEntries(this.textureCache),
+        bindings: this.modelBindings.map(binding => ({
+          sceneId: binding.sceneId,
+          modelId: binding.modelId,
+          modelName: binding.modelName,
+          deviceId: binding.deviceId,
+          deviceCode: binding.deviceCode,
+          deviceName: binding.deviceName,
+          dataType: binding.dataType,
+          ruleStatus: binding.ruleStatus
+        }))
+      };
+    },
+
+    parseSceneMetadata(textureInfo) {
+      if (!textureInfo) {
+        return { version: 'legacy', textures: {}, bindings: [] };
+      }
+
+      try {
+        const parsed = typeof textureInfo === 'string' ? JSON.parse(textureInfo) : textureInfo;
+        if (parsed && parsed.textures) {
+          return {
+            version: parsed.version || '1.0.0',
+            textures: parsed.textures || {},
+            bindings: parsed.bindings || []
+          };
+        }
+        return {
+          version: 'legacy',
+          textures: parsed || {},
+          bindings: []
+        };
+      } catch (error) {
+        console.error('解析场景元数据失败:', error);
+        return { version: 'legacy', textures: {}, bindings: [] };
+      }
+    },
+
+    normalizeSceneImportData(sceneData) {
+      const version = sceneData?.version || 'legacy';
+      const models = Array.isArray(sceneData?.models) ? sceneData.models : [];
+      const bindings = Array.isArray(sceneData?.bindings) ? sceneData.bindings : [];
+      const skybox = sceneData?.skybox || { enabled: !!sceneData?.skyboxEnabled };
+      const sceneMeta = sceneData?.sceneMeta || {};
+
+      return {
+        version,
+        sceneMeta,
+        skybox,
+        models: models.map((model, index) => {
+          const file = model.file || model?.userData?.file;
+          return {
+            id: model.id || model.uuid || model.sceneModelId || `imported-model-${index}`,
+            uuid: model.uuid || model.id || model.sceneModelId || `imported-model-${index}`,
+            name: model.name || `模型_${index + 1}`,
+            file,
+            position: model.position || { x: 0, y: 0, z: 0 },
+            rotation: model.rotation || { x: 0, y: 0, z: 0 },
+            scale: model.scale || { x: 1, y: 1, z: 1 },
+            boundData: model.boundData || null,
+            userData: model.userData || {}
+          };
+        }).filter(model => !!model.file),
+        bindings
+      };
+    },
+
+    serializeSceneModel(model) {
+      return {
+        id: this.getModelStorageId(model),
+        uuid: model.uuid,
+        name: model.name,
+        file: model.userData?.file || model.file || model.userData?.originalModel?.file || null,
+        position: {
+          x: model.position.x,
+          y: model.position.y,
+          z: model.position.z
+        },
+        rotation: {
+          x: model.rotation.x,
+          y: model.rotation.y,
+          z: model.rotation.z
+        },
+        scale: {
+          x: model.scale.x,
+          y: model.scale.y,
+          z: model.scale.z
+        },
+        boundData: model.boundData || null,
+        userData: {
+          sceneModelId: this.getModelStorageId(model)
+        }
+      };
+    },
+
+    exportSceneStructure() {
+      const models = [];
+      this.scene.traverse((object) => {
+        if (object.isGroup && object !== this.helperGroup && object.parent === this.scene) {
+          const serialized = this.serializeSceneModel(object);
+          if (serialized.file) {
+            models.push(serialized);
+          }
+        }
+      });
+
+      return {
+        version: '1.0.0',
+        sceneMeta: {
+          id: this.currentSceneId,
+          name: this.currentSceneName,
+          description: this.currentSceneDescription
+        },
+        skybox: {
+          enabled: this.skyboxEnabled
+        },
+        models,
+        bindings: this.modelBindings.map(binding => ({
+          sceneId: binding.sceneId,
+          modelId: binding.modelId,
+          modelName: binding.modelName,
+          deviceId: binding.deviceId,
+          deviceCode: binding.deviceCode,
+          deviceName: binding.deviceName,
+          dataType: binding.dataType,
+          ruleStatus: binding.ruleStatus
+        }))
+      };
+    },
     // 添加测试贴图功能的方法
     testTextureApplication() {
       console.log('=== 测试贴图功能 ===');
@@ -726,35 +890,44 @@ export default {
     },
 
     loadModel(modelData) {
-      console.log(`加载模型: ${modelData}`);
-      this.gltfLoader.load(modelData.file, (gltf) => {
+      const normalizedModel = {
+        ...modelData,
+        id: modelData.id || modelData.uuid || `scene-model-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        position: modelData.position || { x: 0, y: 0, z: 0 },
+        scale: modelData.scale || { x: 1, y: 1, z: 1 },
+        rotation: modelData.rotation || { x: 0, y: 0, z: 0 },
+        userData: modelData.userData || {}
+      };
+      console.log(`load model: ${normalizedModel.file}`);
+      this.gltfLoader.load(normalizedModel.file, (gltf) => {
         const model = gltf.scene;
-        model.name = modelData.name;
-        model.file = modelData.file;
-        model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-        model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
-        model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-        model.boundData = modelData.boundData || null;
-        
-        // 将模型包装在一个Group中，以便更好地管理
+        model.name = normalizedModel.name;
+        model.file = normalizedModel.file;
+        model.position.set(normalizedModel.position.x, normalizedModel.position.y, normalizedModel.position.z);
+        model.scale.set(normalizedModel.scale.x, normalizedModel.scale.y, normalizedModel.scale.z);
+        model.rotation.set(normalizedModel.rotation.x, normalizedModel.rotation.y, normalizedModel.rotation.z);
+        model.boundData = normalizedModel.boundData || null;
+
         const modelGroup = new THREE.Group();
         modelGroup.add(model);
-        modelGroup.name = modelData.name;
+        modelGroup.name = normalizedModel.name;
         modelGroup.position.copy(model.position);
         modelGroup.scale.copy(model.scale);
         modelGroup.rotation.copy(model.rotation);
-        modelGroup.boundData = modelData.boundData || null;
-        modelGroup.userData = { 
-          file: modelData.file,
+        modelGroup.boundData = normalizedModel.boundData || null;
+        modelGroup.userData = {
+          ...normalizedModel.userData,
+          file: normalizedModel.file,
+          sceneModelId: normalizedModel.id,
           originalModel: model
         };
-        
+        modelGroup.file = normalizedModel.file;
+
         this.scene.add(modelGroup);
         window.threeScene.scene = this.scene;
-        console.log(`成功加载模型: ${modelData.name}`);
       }, undefined, (error) => {
-        console.error('模型加载失败:', error);
-        this.$message.error(`模型加载失败: ${modelData.name}`);
+        console.error('load model failed:', error);
+        this.$message.error(`??????: ${normalizedModel.name}`);
       });
     },
 
@@ -807,6 +980,7 @@ export default {
       this.deselectModel();
 
       this.selectedModel = model;
+      this.selectedModel.boundData = this.getBindingForModel(this.getModelStorageId(model));
       console.log("selectedModel 已设置:", this.selectedModel);
 
       this.addSelectionEffect(model);
@@ -891,34 +1065,38 @@ export default {
     },
 
     handleModelSelection(modelData) {
-      console.log('选择的模型数据:', modelData);
+      console.log('selected model data:', modelData);
 
       if (modelData && modelData.file) {
         const modelInfo = {
-          name: modelData.name || '未命名模型',
+          id: `scene-model-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+          name: modelData.name || '?????',
           file: modelData.file,
           position: { x: 0, y: 0, z: 0 },
           scale: { x: 1, y: 1, z: 1 },
           rotation: { x: 0, y: 0, z: 0 },
-          boundData: null
+          boundData: null,
+          userData: {}
         };
 
         this.loadModel(modelInfo);
 
         this.recordOperation({
           type: 'add_model',
-          modelId: modelInfo.name,
+          modelId: modelInfo.id,
           modelData: modelInfo
         });
 
-        this.$message.success(`模型 ${modelInfo.name} 已添加到场景`);
+        this.$message.success(`?? ${modelInfo.name} ??????`);
       } else {
-        console.error('无效的模型数据:', modelData);
-        this.$message.error('模型数据无效');
+        console.error('invalid model data:', modelData);
+        this.$message.error('??????');
       }
     },
 
     handleDeleteModel(model) {
+      const modelId = this.getModelStorageId(model);
+      this.handleRemoveModelBinding(modelId);
       if (model && model.parent) {
         model.parent.remove(model);
       }
@@ -997,24 +1175,23 @@ export default {
 
         if (ext === 'json') {
           const reader = new FileReader();
-          reader.onload = () => {
+          reader.onload = async () => {
             try {
-              const sceneData = JSON.parse(reader.result);
+              const imported = this.normalizeSceneImportData(JSON.parse(reader.result));
               this.sceneLoaded = true;
+              this.modelBindings = imported.bindings || [];
               this.$nextTick(() => {
                 this.initScene();
-                if (sceneData.models) {
-                  this.loadModels(sceneData.models);
-                }
-                if (sceneData.skyboxEnabled) {
-                  this.skyboxEnabled = true;
+                this.loadModels(imported.models);
+                this.skyboxEnabled = !!imported.skybox?.enabled;
+                if (this.skyboxEnabled) {
                   this.setSkyboxBackground();
                 }
-                this.$message.success('场景导入成功');
+                this.$message.success('scene imported successfully');
               });
             } catch (error) {
-              console.error('导入场景失败:', error);
-              this.$message.error('导入场景失败');
+              console.error('import scene failed:', error);
+              this.$message.error('scene import failed');
             }
           };
           reader.readAsText(file);
@@ -1029,23 +1206,24 @@ export default {
             this.gltfLoader.load(url, (gltf) => {
               const model = gltf.scene;
               model.name = file.name.replace(/\.(glb|gltf)$/i, '');
-              model.position.set(0, 0, 0);
-              model.scale.set(1, 1, 1);
-              model.rotation.set(0, 0, 0);
+              model.userData = {
+                ...(model.userData || {}),
+                sceneModelId: `scene-model-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+              };
               this.scene.add(model);
               window.threeScene.scene = this.scene;
-              this.$message.success('GLB/GLTF 导入成功');
+              this.$message.success('GLB/GLTF imported successfully');
               URL.revokeObjectURL(url);
             }, undefined, (err) => {
-              console.error('GLB/GLTF 导入失败:', err);
-              this.$message.error('GLB/GLTF 导入失败');
+              console.error('import glb failed:', err);
+              this.$message.error('GLB/GLTF import failed');
               URL.revokeObjectURL(url);
             });
           });
           return;
         }
 
-        this.$message.warning('不支持的文件类型');
+        this.$message.warning('unsupported file type');
       };
       input.click();
     },
@@ -1115,31 +1293,7 @@ export default {
 
       this.scene.remove(this.helperGroup);
 
-      const sceneData = {
-        models: this.scene.children
-            .filter(child => child !== this.helperGroup)
-            .map(model => ({
-              name: model.name,
-              file: model.file,
-              position: {
-                x: model.position.x,
-                y: model.position.y,
-                z: model.position.z
-              },
-              scale: {
-                x: model.scale.x,
-                y: model.scale.y,
-                z: model.scale.z
-              },
-              rotation: {
-                x: model.rotation.x,
-                y: model.rotation.y,
-                z: model.rotation.z
-              },
-              boundData: model.boundData
-            }))
-      };
-
+      const sceneData = this.exportSceneStructure();
       const jsonString = JSON.stringify(sceneData, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const link = document.createElement('a');
@@ -1149,7 +1303,7 @@ export default {
       URL.revokeObjectURL(link.href);
 
       this.scene.add(this.helperGroup);
-      this.$message.success('JSON导出成功');
+      this.$message.success('JSON exported successfully');
     },
 
     recordOperation(operation) {
@@ -1371,6 +1525,88 @@ export default {
       }
     },
 
+    async loadSceneBindings(sceneId = this.currentSceneId) {
+      if (!sceneId) {
+        this.modelBindings = [];
+        return;
+      }
+
+      try {
+        const res = await getModelBindings({ sceneId });
+        this.modelBindings = res.data || res || [];
+      } catch (error) {
+        console.error('????????:', error);
+        this.modelBindings = [];
+      }
+    },
+
+    getBindingForModel(modelId) {
+      return this.modelBindings.find(binding => binding.modelId === modelId) || null;
+    },
+
+    getBindingForPanel(panel) {
+      if (!panel?.modelId) {
+        return null;
+      }
+      return this.getBindingForModel(panel.modelId);
+    },
+
+    async handleSaveModelBinding(binding) {
+      const payload = this.normalizeBindingPayload(binding);
+      try {
+        const existing = this.getBindingForModel(payload.modelId);
+        let savedBinding = { ...existing, ...payload };
+        if (payload.sceneId) {
+          const response = existing?.id
+            ? await updateModelBinding(existing.id, savedBinding)
+            : await createModelBinding(savedBinding);
+          savedBinding = response.data || response;
+        }
+        const index = this.modelBindings.findIndex(item => item.modelId === savedBinding.modelId);
+        if (index > -1) {
+          this.modelBindings.splice(index, 1, savedBinding);
+        } else {
+          this.modelBindings.push(savedBinding);
+        }
+        this.selectedModel.boundData = savedBinding;
+        this.$message.success(payload.sceneId ? 'model binding saved' : 'binding cached locally, save scene to persist');
+      } catch (error) {
+        console.error('save model binding failed:', error);
+        this.$message.error('save model binding failed');
+      }
+    },
+
+    async handleRemoveModelBinding(modelId) {
+      if (!modelId) return;
+      try {
+        if (this.currentSceneId) {
+          await deleteModelBindingBySceneAndModel(this.currentSceneId, modelId);
+        }
+        this.modelBindings = this.modelBindings.filter(binding => binding.modelId !== modelId);
+        if (this.selectedModel && this.getModelStorageId(this.selectedModel) === modelId) {
+          this.selectedModel.boundData = null;
+        }
+        this.$message.success('model binding removed');
+      } catch (error) {
+        console.error('remove model binding failed:', error);
+        this.$message.error('remove model binding failed');
+      }
+    },
+
+    async syncSceneBindings(sceneId) {
+      if (!sceneId) return;
+      const tasks = this.modelBindings.map(binding => {
+        const payload = { ...binding, sceneId };
+        return binding.id
+          ? updateModelBinding(binding.id, payload)
+          : createModelBinding(payload);
+      });
+      if (tasks.length > 0) {
+        await Promise.all(tasks);
+        await this.loadSceneBindings(sceneId);
+      }
+    },
+
     openPanel(panel) {
       const exists = this.openedPanels.find(p => p.id === panel.id);
       if (!exists) {
@@ -1425,7 +1661,7 @@ export default {
     },
 
     openAllBoundPanels() {
-      const boundPanels = this.allPanels.filter(p => p.deviceId || p.modelId);
+      const boundPanels = this.allPanels.filter(p => p.modelId);
       if (boundPanels.length === 0) {
         this.$message.warning('没有已绑定的展板');
         return;
@@ -1440,7 +1676,7 @@ export default {
       let foundModel = null;
       this.scene.traverse((object) => {
         if (object.isGroup && object !== this.helperGroup) {
-          if (object.uuid === panel.modelId || object.name === panel.modelName) {
+          if (this.getModelStorageId(object) === panel.modelId || object.uuid === panel.modelId || object.name === panel.modelName) {
             foundModel = object;
           }
         }
@@ -1486,7 +1722,7 @@ export default {
       if (!panel) return;
 
       try {
-        await bindModelApi(panel.id, model.uuid, model.name || '未命名模型', 'scene');
+        await bindModelApi(panel.id, this.getModelStorageId(model), model.name || 'model', 'scene');
         this.boundModels[panel.id] = {
           name: model.name || '未命名模型',
           object: model,
@@ -1561,59 +1797,67 @@ export default {
     async loadFromSceneLibrary(id) {
       try {
         const { getScene } = await import('@/api/scenes');
-        const sceneData = await getScene(id)
-        const { fileType, path, name, description, url } = sceneData
-        this.currentSceneId = sceneData.id || id
-        this.currentSceneName = name || ''
-        this.currentSceneDescription = description || ''
+        const sceneData = await getScene(id);
+        const { fileType, path, name, description, url } = sceneData;
+        this.currentSceneId = sceneData.id || id;
+        this.currentSceneName = name || '';
+        this.currentSceneDescription = description || '';
 
-        this.sceneLoaded = true
+        this.sceneLoaded = true;
         this.$nextTick(() => {
-          this.initScene()
+          this.initScene();
 
           if (fileType === 'json') {
-            const sceneUrl = this.withCacheBust(url || (path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)))
+            const sceneUrl = this.withCacheBust(url || (path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)));
             fetch(sceneUrl)
-                .then(resp => resp.json())
-                .then(jsonData => {
-                  if (jsonData.models) this.loadModels(jsonData.models)
-                  if (jsonData.skyboxEnabled) {
-                    this.skyboxEnabled = true
-                    this.setSkyboxBackground()
-                  }
-                  this.$message.success('JSON 场景已加载')
-                })
-            return
+              .then(resp => resp.json())
+              .then(async (jsonData) => {
+                const normalized = this.normalizeSceneImportData(jsonData);
+                this.loadModels(normalized.models);
+                this.skyboxEnabled = !!normalized.skybox?.enabled;
+                if (this.skyboxEnabled) {
+                  this.setSkyboxBackground();
+                }
+                this.modelBindings = normalized.bindings || [];
+                await this.loadSceneBindings(id);
+                this.$message.success('scene loaded successfully');
+              });
+            this.loadSceneTextures(id);
+            return;
           }
 
           if (fileType === 'glb' || fileType === 'gltf') {
-            const loader = new GLTFLoader()
-            const sceneUrl = this.withCacheBust(url || (path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)))
+            const loader = new GLTFLoader();
+            const sceneUrl = this.withCacheBust(url || (path.startsWith('http') ? path : getScenePathUrl(path.startsWith('/') ? path.slice(1) : path)));
             loader.load(
-                sceneUrl,
-                (gltf) => {
-                  const model = gltf.scene
-                  model.name = name
-                  model.position.set(0,0,0)
-                  model.scale.set(1,1,1)
-                  this.scene.add(model)
-                  window.threeScene.scene = this.scene
-                  this.$message.success('GLB/GLTF 场景已加载')
-                },
-                undefined,
-                (err) => {
-                  console.error(err)
-                  this.$message.error('GLB/GLTF 加载失败')
-                }
-            )
+              sceneUrl,
+              async (gltf) => {
+                const model = gltf.scene;
+                model.name = name;
+                model.position.set(0, 0, 0);
+                model.scale.set(1, 1, 1);
+                model.userData = {
+                  ...(model.userData || {}),
+                  sceneModelId: model.userData?.sceneModelId || `scene-model-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+                };
+                this.scene.add(model);
+                window.threeScene.scene = this.scene;
+                await this.loadSceneBindings(id);
+                this.$message.success('scene loaded successfully');
+              },
+              undefined,
+              (err) => {
+                console.error(err);
+                this.$message.error('scene load failed');
+              }
+            );
           }
-          
-          // 加载贴图信息
+
           this.loadSceneTextures(id);
-        })
+        });
       } catch (e) {
-        console.error('加载场景库失败', e)
-        this.$message.error('加载场景失败')
+        console.error('load scene library failed:', e);
+        this.$message.error('scene load failed');
       }
     },
 
@@ -1626,23 +1870,25 @@ export default {
     async loadSceneTextures(sceneId) {
       try {
         const sceneAsset = await getScene(sceneId);
-        console.log('加载的场景资产:', sceneAsset);
         if (sceneAsset && sceneAsset.textureInfo) {
-          const textures = JSON.parse(sceneAsset.textureInfo);
-          this.modelTextures = new Map(Object.entries(textures));
+          const metadata = this.parseSceneMetadata(sceneAsset.textureInfo);
+          this.modelTextures = new Map(Object.entries(metadata.textures || {}));
+          if ((!this.modelBindings || this.modelBindings.length === 0) && metadata.bindings?.length) {
+            this.modelBindings = metadata.bindings;
+          }
           this.applySavedTextures();
         }
       } catch (error) {
-        console.error('加载场景贴图信息失败:', error);
+        console.error('load scene metadata failed:', error);
       }
     },
-    
+
     // 应用已保存的贴图到模型
     applySavedTextures() {
       // 遍历场景中的所有模型
       this.scene.traverse((object) => {
         if (object.isGroup && object !== this.helperGroup) {
-          const textureData = this.modelTextures.get(object.uuid);
+          const textureData = this.modelTextures.get(this.getModelStorageId(object));
           if (textureData) {
             this.previewTextureOnModel(object, textureData);
           }
@@ -1808,7 +2054,7 @@ export default {
       });
       
       // 临时存储贴图信息
-      this.textureCache.set(model.uuid, textureData);
+      this.textureCache.set(this.getModelStorageId(model), textureData);
       
       // 立即在视图中预览贴图效果
       this.previewTextureOnModel(model, textureData);
@@ -1824,7 +2070,7 @@ export default {
       });
       
       // 移除贴图缓存
-      this.textureCache.delete(model.uuid);
+      this.textureCache.delete(this.getModelStorageId(model));
       
       // 移除模型上的贴图
       this.removeTextureFromModel(model);

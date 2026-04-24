@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,16 +29,16 @@ class OpcUaServerServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(opcUaConfig.getServer()).thenReturn(serverConfig);
-        when(serverConfig.getCertificate()).thenReturn(certificateConfig);
-        when(serverConfig.isEnabled()).thenReturn(false);
-        when(serverConfig.getName()).thenReturn("TestServer");
-        when(serverConfig.getApplicationUri()).thenReturn("urn:test:server");
-        when(serverConfig.getProductUri()).thenReturn("urn:test:product");
-        when(serverConfig.getBindAddress()).thenReturn("127.0.0.1");
-        when(serverConfig.getPort()).thenReturn(4840);
-        when(certificateConfig.getPath()).thenReturn("test/certificates");
-        when(certificateConfig.isGenerateIfMissing()).thenReturn(true);
+        lenient().when(opcUaConfig.getServer()).thenReturn(serverConfig);
+        lenient().when(serverConfig.getCertificate()).thenReturn(certificateConfig);
+        lenient().when(serverConfig.isEnabled()).thenReturn(false);
+        lenient().when(serverConfig.getName()).thenReturn("TestServer");
+        lenient().when(serverConfig.getApplicationUri()).thenReturn("urn:test:server");
+        lenient().when(serverConfig.getProductUri()).thenReturn("urn:test:product");
+        lenient().when(serverConfig.getBindAddress()).thenReturn("127.0.0.1");
+        lenient().when(serverConfig.getPort()).thenReturn(4840);
+        lenient().when(certificateConfig.getPath()).thenReturn("test/certificates");
+        lenient().when(certificateConfig.isGenerateIfMissing()).thenReturn(true);
 
         opcUaServerService = new OpcUaServerService(opcUaConfig);
     }

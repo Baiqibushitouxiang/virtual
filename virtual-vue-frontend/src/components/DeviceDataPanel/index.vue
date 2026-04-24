@@ -1,178 +1,170 @@
-<script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { API_CONFIG } from '@/config/apiConfig';
-import { updateDataPanel, bindModel, unbindModel, bindDevice, unbindDevice, updatePanelPosition } from '@/api/dataPanel';
+﻿<script setup>
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { API_CONFIG } from '@/config/apiConfig'
+import { updatePanelPosition, unbindModel } from '@/api/dataPanel'
 
 const props = defineProps({
   visible: { type: Boolean, default: true },
   panelConfig: { type: Object, default: null },
   boundModel: { type: Object, default: null },
+  modelBinding: { type: Object, default: null },
   bindMode: { type: Boolean, default: false }
-});
+})
 
-const emit = defineEmits(['close', 'startBind', 'cancelBind', 'updatePanel', 'deletePanel', 'unbindModel']);
+const emit = defineEmits(['close', 'startBind', 'cancelBind', 'updatePanel', 'deletePanel', 'unbindModel'])
 
-const deviceData = ref(null);
-const isConnected = ref(false);
-const ws = ref(null);
+const deviceData = ref(null)
+const isConnected = ref(false)
+const ws = ref(null)
+const panelStyle = ref({ top: '80px', left: '20px' })
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0 })
+const savePositionTimeout = ref(null)
 
-const panelStyle = ref({ top: '80px', left: '20px' });
-const isDragging = ref(false);
-const dragStart = ref({ x: 0, y: 0 });
-const savePositionTimeout = ref(null);
-
-const panelName = computed(() => {
-  return props.panelConfig?.name || '设备数据展板';
-});
-
-const hasDeviceBinding = computed(() => {
-  return props.panelConfig?.deviceId != null;
-});
-
-const hasModelBinding = computed(() => {
-  return props.panelConfig?.modelId != null;
-});
-
-const deviceCode = computed(() => {
-  return props.panelConfig?.device?.deviceId || null;
-});
+const panelName = computed(() => props.panelConfig?.name || '数据展板')
+const hasModelBinding = computed(() => !!props.panelConfig?.modelId)
+const activeDataBinding = computed(() => props.modelBinding || null)
+const hasDataSource = computed(() => !!activeDataBinding.value?.deviceCode && !!activeDataBinding.value?.dataType)
 
 const initPosition = () => {
   if (props.panelConfig?.position) {
     try {
-      const pos = typeof props.panelConfig.position === 'string' 
-        ? JSON.parse(props.panelConfig.position) 
-        : props.panelConfig.position;
+      const pos = typeof props.panelConfig.position === 'string'
+        ? JSON.parse(props.panelConfig.position)
+        : props.panelConfig.position
       panelStyle.value = {
         top: pos.top || '80px',
         left: pos.left || '20px'
-      };
+      }
     } catch (e) {
-      console.error('解析位置失败:', e);
+      console.error('parse panel position failed:', e)
     }
   }
-};
+}
 
 const getWebSocketUrl = () => {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = API_CONFIG.baseURL.replace(/^https?:\/\//, '');
-  return `${protocol}${host}/ws/device-data`;
-};
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = API_CONFIG.baseURL.replace(/^https?:\/\//, '')
+  return `${protocol}${host}/ws/device-data`
+}
 
-const lineStart = computed(() => {
-  if (!props.boundModel || !props.boundModel.screenPosition) return null;
-  return props.boundModel.screenPosition;
-});
-
-const lineEnd = computed(() => {
-  return {
-    x: parseInt(panelStyle.value.left) + 120,
-    y: parseInt(panelStyle.value.top) + 40
-  };
-});
+const lineStart = computed(() => props.boundModel?.screenPosition || null)
+const lineEnd = computed(() => ({
+  x: parseInt(panelStyle.value.left) + 120,
+  y: parseInt(panelStyle.value.top) + 40
+}))
 
 const startDrag = (e) => {
-  if (props.bindMode) return;
-  isDragging.value = true;
+  if (props.bindMode) return
+  isDragging.value = true
   dragStart.value = {
     x: e.clientX - parseInt(panelStyle.value.left),
     y: e.clientY - parseInt(panelStyle.value.top)
-  };
-  document.addEventListener('mousemove', onDrag);
-  document.addEventListener('mouseup', stopDrag);
-};
+  }
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+}
 
 const onDrag = (e) => {
-  if (!isDragging.value) return;
+  if (!isDragging.value) return
   panelStyle.value = {
-    top: (e.clientY - dragStart.value.y) + 'px',
-    left: (e.clientX - dragStart.value.x) + 'px'
-  };
-};
+    top: `${e.clientY - dragStart.value.y}px`,
+    left: `${e.clientX - dragStart.value.x}px`
+  }
+}
 
 const stopDrag = () => {
-  isDragging.value = false;
-  document.removeEventListener('mousemove', onDrag);
-  document.removeEventListener('mouseup', stopDrag);
-  
-  savePositionDebounced();
-};
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+  savePositionDebounced()
+}
 
 const savePositionDebounced = async () => {
-  if (!props.panelConfig?.id) return;
-  
+  if (!props.panelConfig?.id) return
   if (savePositionTimeout.value) {
-    clearTimeout(savePositionTimeout.value);
+    clearTimeout(savePositionTimeout.value)
   }
-  
   savePositionTimeout.value = setTimeout(async () => {
     try {
-      const position = JSON.stringify(panelStyle.value);
-      await updatePanelPosition(props.panelConfig.id, position);
-      console.log('位置已保存');
+      await updatePanelPosition(props.panelConfig.id, JSON.stringify(panelStyle.value))
     } catch (e) {
-      console.error('保存位置失败:', e);
+      console.error('save panel position failed:', e)
     }
-  }, 500);
-};
-
-const connect = () => {
-  ws.value = new WebSocket(getWebSocketUrl());
-  ws.value.onopen = () => { isConnected.value = true; };
-  ws.value.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (!deviceCode.value || data.deviceId === deviceCode.value) {
-        deviceData.value = data;
-      }
-    } catch (e) {
-      console.error('解析消息失败:', e);
-    }
-  };
-  ws.value.onclose = () => { isConnected.value = false; };
-  ws.value.onerror = () => { isConnected.value = false; };
-};
+  }, 500)
+}
 
 const formatTime = (timestamp) => {
-  if (!timestamp) return '--';
-  return new Date(timestamp).toLocaleTimeString('zh-CN');
-};
+  if (!timestamp) return '--'
+  return new Date(timestamp).toLocaleTimeString('zh-CN')
+}
 
 const formatDataType = (type) => {
-  const typeMap = { 'temperature': '温度', 'humidity': '湿度', 'pressure': '压力', 'voltage': '电压', 'current': '电流' };
-  return typeMap[type] || type;
-};
+  const typeMap = {
+    temperature: '温度',
+    humidity: '湿度',
+    pressure: '压力',
+    voltage: '电压',
+    current: '电流',
+    power: '功率'
+  }
+  return typeMap[type] || type
+}
+
+const connect = () => {
+  ws.value = new WebSocket(getWebSocketUrl())
+  ws.value.onopen = () => { isConnected.value = true }
+  ws.value.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      const matchesDevice = !activeDataBinding.value?.deviceCode || data.deviceId === activeDataBinding.value.deviceCode
+      const dataType = data?.data?.dataType || data?.dataType
+      const matchesType = !activeDataBinding.value?.dataType || dataType === activeDataBinding.value.dataType
+      if (matchesDevice && matchesType) {
+        deviceData.value = data
+      }
+    } catch (e) {
+      console.error('parse websocket message failed:', e)
+    }
+  }
+  ws.value.onclose = () => { isConnected.value = false }
+  ws.value.onerror = () => { isConnected.value = false }
+}
 
 const handleStartBind = () => {
-  emit('startBind', props.panelConfig);
-};
+  emit('startBind', props.panelConfig)
+}
 
 const handleCancelBind = async () => {
   if (props.panelConfig?.id) {
     try {
-      await unbindModel(props.panelConfig.id);
-      emit('unbindModel', props.panelConfig.id);
-      emit('updatePanel');
+      await unbindModel(props.panelConfig.id)
+      emit('unbindModel', props.panelConfig.id)
+      emit('updatePanel')
     } catch (e) {
-      console.error('解绑失败:', e);
+      console.error('unbind panel model failed:', e)
     }
   }
-  emit('cancelBind');
-};
+  emit('cancelBind')
+}
 
 const handleDelete = () => {
-  emit('deletePanel', props.panelConfig);
-};
+  emit('deletePanel', props.panelConfig)
+}
 
 watch(() => props.panelConfig, () => {
-  initPosition();
-}, { immediate: true, deep: true });
+  initPosition()
+}, { immediate: true, deep: true })
 
-onMounted(connect);
-onUnmounted(() => { 
-  if (ws.value) ws.value.close();
-  if (savePositionTimeout.value) clearTimeout(savePositionTimeout.value);
-});
+watch(activeDataBinding, () => {
+  deviceData.value = null
+})
+
+onMounted(connect)
+onUnmounted(() => {
+  if (ws.value) ws.value.close()
+  if (savePositionTimeout.value) clearTimeout(savePositionTimeout.value)
+})
 </script>
 
 <template>
@@ -181,64 +173,62 @@ onUnmounted(() => {
       <span class="panel-title">{{ panelName }}</span>
       <span class="status" :class="{ connected: isConnected }">{{ isConnected ? '已连接' : '未连接' }}</span>
       <div class="header-actions">
-        <button class="delete-btn" @click.stop="handleDelete" title="删除展板">×</button>
-        <button class="close-btn" @click.stop="$emit('close')">−</button>
+        <button class="delete-btn" @click.stop="handleDelete" title="删除展板">x</button>
+        <button class="close-btn" @click.stop="$emit('close')">-</button>
       </div>
     </div>
     <div class="panel-body">
-      <div v-if="!deviceData && !hasDeviceBinding" class="empty">
-        <p>暂无数据</p>
-        <p class="hint">请先绑定设备</p>
+      <div class="binding-card">
+        <div class="binding-row">
+          <span class="label">模型</span>
+          <span class="value">{{ hasModelBinding ? props.panelConfig.modelName : '未绑定' }}</span>
+        </div>
+        <div class="binding-row">
+          <span class="label">设备</span>
+          <span class="value">{{ activeDataBinding?.deviceName || '未绑定' }}</span>
+        </div>
+        <div class="binding-row">
+          <span class="label">数据项</span>
+          <span class="value">{{ formatDataType(activeDataBinding?.dataType || '-') }}</span>
+        </div>
       </div>
-      <div v-else-if="!deviceData" class="empty">等待数据...</div>
+
+      <div v-if="!hasModelBinding" class="empty">
+        <p>请先为展板绑定模型</p>
+      </div>
+      <div v-else-if="!hasDataSource" class="empty">
+        <p>模型还没有绑定数据源</p>
+        <p class="hint">请在模型详情面板中完成设备与数据项绑定</p>
+      </div>
+      <div v-else-if="!deviceData" class="empty">等待数据中...</div>
       <div v-else class="data-content">
         <div class="row">
-          <span class="label">设备ID:</span>
+          <span class="label">设备编码:</span>
           <span class="value">{{ deviceData.deviceId }}</span>
         </div>
-        <div class="row" v-if="deviceData.data">
-          <span class="label">数据类型:</span>
-          <span class="value">{{ formatDataType(deviceData.data.dataType) }}</span>
+        <div class="row">
+          <span class="label">数据项:</span>
+          <span class="value">{{ formatDataType(deviceData?.data?.dataType || activeDataBinding?.dataType) }}</span>
         </div>
-        <div class="row" v-if="deviceData.data">
+        <div class="row">
           <span class="label">数值:</span>
-          <span class="value highlight">{{ deviceData.data.value }} {{ deviceData.data.unit }}</span>
+          <span class="value highlight">{{ deviceData?.data?.value }} {{ deviceData?.data?.unit || '' }}</span>
         </div>
         <div class="row">
           <span class="label">时间:</span>
           <span class="value">{{ formatTime(deviceData.timestamp) }}</span>
         </div>
       </div>
-      <div class="bind-section">
-        <div class="bind-info-row">
-          <div class="bind-item">
-            <span class="bind-label">设备:</span>
-            <span :class="['bind-value', { bound: hasDeviceBinding }]">
-              {{ hasDeviceBinding ? props.panelConfig.deviceName : '未绑定' }}
-            </span>
-          </div>
-          <div class="bind-item">
-            <span class="bind-label">模型:</span>
-            <span :class="['bind-value', { bound: hasModelBinding }]">
-              {{ hasModelBinding ? props.panelConfig.modelName : '未绑定' }}
-            </span>
-          </div>
-        </div>
-        <div class="bind-actions">
-          <button 
-            v-if="!hasModelBinding" 
-            class="bind-btn" 
-            :class="{ active: bindMode }" 
-            @click="handleStartBind"
-          >
-            {{ bindMode ? '点击场景中的模型...' : '绑定模型' }}
-          </button>
-          <button v-else class="unbind-btn" @click="handleCancelBind">解绑模型</button>
-        </div>
+
+      <div class="bind-actions">
+        <button v-if="!hasModelBinding" class="bind-btn" :class="{ active: bindMode }" @click="handleStartBind">
+          {{ bindMode ? '点击场景中的模型...' : '绑定模型' }}
+        </button>
+        <button v-else class="unbind-btn" @click="handleCancelBind">解除模型</button>
       </div>
     </div>
 
-    <svg v-if="lineStart && hasModelBinding" class="connection-line" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000;">
+    <svg v-if="lineStart && hasModelBinding" class="connection-line">
       <line
         :x1="lineStart.x"
         :y1="lineStart.y"
@@ -256,7 +246,7 @@ onUnmounted(() => {
 <style scoped>
 .data-panel {
   position: fixed;
-  width: 260px;
+  width: 280px;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -270,7 +260,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #28547a 0%, #4c7a9d 100%);
   border-radius: 8px 8px 0 0;
   cursor: move;
   color: #fff;
@@ -285,7 +275,7 @@ onUnmounted(() => {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .status.connected {
@@ -298,116 +288,80 @@ onUnmounted(() => {
   gap: 4px;
 }
 
-.close-btn, .delete-btn {
-  background: rgba(255,255,255,0.2);
+.close-btn,
+.delete-btn,
+.bind-btn,
+.unbind-btn {
   border: none;
-  font-size: 16px;
   cursor: pointer;
+  border-radius: 6px;
+}
+
+.close-btn,
+.delete-btn {
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
   padding: 2px 8px;
-  border-radius: 4px;
-  line-height: 1;
-}
-
-.close-btn:hover, .delete-btn:hover {
-  background: rgba(255,255,255,0.3);
-}
-
-.delete-btn {
-  font-size: 14px;
 }
 
 .panel-body {
   padding: 12px;
 }
 
-.empty {
-  color: #999;
-  text-align: center;
-  padding: 20px 0;
+.binding-card {
+  background: #f6f8fb;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
 }
 
-.empty .hint {
-  font-size: 12px;
-  color: #bbb;
-  margin-top: 4px;
-}
-
-.data-content .row {
+.binding-row,
+.row {
   display: flex;
-  margin-bottom: 8px;
-  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
-.data-content .label {
-  width: 60px;
+.label {
   color: #666;
-  flex-shrink: 0;
 }
 
-.data-content .value {
-  flex: 1;
-  color: #333;
+.value {
+  color: #222;
   word-break: break-all;
+  text-align: right;
 }
 
-.data-content .value.highlight {
-  color: #1890ff;
-  font-weight: 600;
-  font-size: 15px;
+.highlight {
+  color: #1677ff;
+  font-weight: 700;
 }
 
-.bind-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
+.empty {
+  text-align: center;
+  color: #666;
+  padding: 12px 0;
 }
 
-.bind-info-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.bind-item {
-  display: flex;
-  align-items: center;
+.hint {
   font-size: 12px;
-}
-
-.bind-label {
   color: #999;
-  width: 40px;
-}
-
-.bind-value {
-  color: #999;
-}
-
-.bind-value.bound {
-  color: #52c41a;
-  font-weight: 500;
 }
 
 .bind-actions {
-  display: flex;
-  gap: 8px;
+  margin-top: 12px;
+}
+
+.bind-btn,
+.unbind-btn {
+  width: 100%;
+  padding: 8px 10px;
+  color: #fff;
 }
 
 .bind-btn {
-  flex: 1;
-  padding: 6px 12px;
-  background: #1890ff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.bind-btn:hover {
-  background: #40a9ff;
+  background: #1677ff;
 }
 
 .bind-btn.active {
@@ -415,17 +369,16 @@ onUnmounted(() => {
 }
 
 .unbind-btn {
-  flex: 1;
-  padding: 6px 12px;
-  background: #ff4d4f;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
+  background: #f56c6c;
 }
 
-.unbind-btn:hover {
-  background: #ff7875;
+.connection-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
 }
 </style>
