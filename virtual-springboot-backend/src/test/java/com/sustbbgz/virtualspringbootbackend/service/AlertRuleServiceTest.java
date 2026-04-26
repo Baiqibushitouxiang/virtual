@@ -14,12 +14,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,11 +43,14 @@ class AlertRuleServiceTest {
     @Mock
     private AlertNotifier alertNotifier;
 
+    @Mock
+    private AlertNotifier secondaryAlertNotifier;
+
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(alertRuleService, "baseMapper", alertRuleMapper);
         ReflectionTestUtils.setField(alertRuleService, "deviceService", deviceService);
-        ReflectionTestUtils.setField(alertRuleService, "alertNotifier", alertNotifier);
+        ReflectionTestUtils.setField(alertRuleService, "alertNotifiers", Collections.singletonList(alertNotifier));
     }
 
     @Test
@@ -153,5 +159,24 @@ class AlertRuleServiceTest {
         alertRuleService.evaluateRules(null, "temperature", 10.0);
 
         verify(alertRuleMapper, never()).findEnabledRules(any(), any());
+    }
+
+    @Test
+    void shouldContinueWhenOneNotifierFails() {
+        AlertRule rule = new AlertRule();
+        rule.setId(5L);
+        rule.setDeviceCode("DEV-001");
+        rule.setDataType("temperature");
+        rule.setOperator(">=");
+        rule.setThreshold(80.0);
+        when(alertRuleMapper.findEnabledRules("DEV-001", "temperature")).thenReturn(Collections.singletonList(rule));
+        ReflectionTestUtils.setField(alertRuleService, "alertNotifiers", Arrays.asList(alertNotifier, secondaryAlertNotifier));
+        doThrow(new RuntimeException("boom")).when(alertNotifier).notify(eq(rule), eq(90.0), any(String.class));
+        doReturn(true).when(alertRuleService).updateById(any(AlertRule.class));
+
+        assertDoesNotThrow(() -> alertRuleService.evaluateRules("DEV-001", "temperature", 90.0));
+
+        verify(secondaryAlertNotifier).notify(eq(rule), eq(90.0), any(String.class));
+        verify(alertRuleService).updateById(rule);
     }
 }

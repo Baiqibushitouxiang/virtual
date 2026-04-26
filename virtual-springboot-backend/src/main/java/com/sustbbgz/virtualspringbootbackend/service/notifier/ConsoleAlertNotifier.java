@@ -5,8 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 @Component
 public class ConsoleAlertNotifier implements AlertNotifier {
 
@@ -23,7 +21,7 @@ public class ConsoleAlertNotifier implements AlertNotifier {
                 rule.getOperator(),
                 rule.getThreshold(),
                 currentValue,
-                LocalDateTime.now(),
+                rule.getLastTriggeredAt(),
                 message
         );
     }

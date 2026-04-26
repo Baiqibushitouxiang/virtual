@@ -6,22 +6,28 @@ import com.sustbbgz.virtualspringbootbackend.entity.AlertRule;
 import com.sustbbgz.virtualspringbootbackend.entity.Device;
 import com.sustbbgz.virtualspringbootbackend.mapper.AlertRuleMapper;
 import com.sustbbgz.virtualspringbootbackend.service.notifier.AlertNotifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
 @Transactional
 public class AlertRuleService extends ServiceImpl<AlertRuleMapper, AlertRule> {
 
+    private static final Logger logger = LoggerFactory.getLogger(AlertRuleService.class);
+
     @Resource
     private DeviceService deviceService;
 
-    @Resource
-    private AlertNotifier alertNotifier;
+    @Autowired(required = false)
+    private List<AlertNotifier> alertNotifiers = Collections.emptyList();
 
     public List<AlertRule> findRules(Long userId) {
         if (userId == null) {
@@ -63,11 +69,26 @@ public class AlertRuleService extends ServiceImpl<AlertRuleMapper, AlertRule> {
             if (isInCooldown(rule)) {
                 continue;
             }
+
             String message = buildMessage(rule, value);
-            alertNotifier.notify(rule, value, message);
-            rule.setLastTriggeredAt(LocalDateTime.now());
-            rule.setUpdateTime(LocalDateTime.now());
+            LocalDateTime triggeredAt = LocalDateTime.now();
+            rule.setLastTriggeredAt(triggeredAt);
+            rule.setUpdateTime(triggeredAt);
+            notifyAlert(rule, value, message);
             updateById(rule);
+        }
+    }
+
+    private void notifyAlert(AlertRule rule, Double value, String message) {
+        for (AlertNotifier alertNotifier : alertNotifiers) {
+            try {
+                alertNotifier.notify(rule, value, message);
+            } catch (Exception ex) {
+                logger.error("Alert notification failed: notifier={} ruleId={}",
+                        alertNotifier.getClass().getSimpleName(),
+                        rule.getId(),
+                        ex);
+            }
         }
     }
 
@@ -99,7 +120,7 @@ public class AlertRuleService extends ServiceImpl<AlertRuleMapper, AlertRule> {
     private String buildMessage(AlertRule rule, Double value) {
         String template = rule.getMessageTemplate();
         if (template == null || template.trim().isEmpty()) {
-            template = "设备 ${deviceName} 的 ${dataType} 当前值 ${value} 触发阈值 ${operator} ${threshold}";
+            template = "Device ${deviceName} (${deviceCode}) ${dataType} current value ${value} triggered threshold ${operator} ${threshold}";
         }
         return template
                 .replace("${deviceName}", defaultString(rule.getDeviceName()))
