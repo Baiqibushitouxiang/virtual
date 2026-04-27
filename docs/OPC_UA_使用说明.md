@@ -39,7 +39,7 @@
 
 ```sql
 -- 执行 SQL 脚本创建设备表
-SOURCE src/main/resources/sql/devices.sql;
+SOURCE src/main/resources/sql/dam_init.sql;
 ```
 
 ### 2. 启动后端服务
@@ -398,7 +398,7 @@ virtual-springboot-backend/
 │       └── DataPushService.java
 └── src/main/resources/
     ├── application.yml
-    └── sql/devices.sql
+    └── sql/dam_init.sql
 
 virtual-vue-frontend/
 ├── src/

@@ -2,10 +2,11 @@ import request from '@/utils/request'
 
 const API_PREFIX = '/api/data-panels'
 
-export function getDataPanels() {
+export function getDataPanels(params = {}) {
   return request({
     url: API_PREFIX,
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
@@ -32,56 +33,59 @@ export function updateDataPanel(id, data) {
   })
 }
 
-export function deleteDataPanel(id) {
+export function deleteDataPanel(id, sceneId) {
   return request({
     url: `${API_PREFIX}/${id}`,
-    method: 'delete'
+    method: 'delete',
+    params: sceneId ? { sceneId } : undefined
   })
 }
 
-export function bindDevice(panelId, deviceId) {
+export function bindDevice(panelId, deviceId, sceneId) {
   return request({
     url: `${API_PREFIX}/${panelId}/bind-device`,
     method: 'post',
-    data: { deviceId }
+    data: { deviceId, sceneId }
   })
 }
 
-export function unbindDevice(panelId) {
+export function unbindDevice(panelId, sceneId) {
   return request({
     url: `${API_PREFIX}/${panelId}/unbind-device`,
-    method: 'post'
+    method: 'post',
+    data: { sceneId }
   })
 }
 
-export function bindModel(panelId, modelId, modelName, modelType) {
+export function bindModel(panelId, modelId, modelName, modelType, sceneId) {
   return request({
     url: `${API_PREFIX}/${panelId}/bind-model`,
     method: 'post',
-    data: { modelId, modelName, modelType }
+    data: { modelId, modelName, modelType, sceneId }
   })
 }
 
-export function unbindModel(panelId) {
+export function unbindModel(panelId, sceneId) {
   return request({
     url: `${API_PREFIX}/${panelId}/unbind-model`,
-    method: 'post'
+    method: 'post',
+    data: { sceneId }
   })
 }
 
-export function updatePanelPosition(panelId, position) {
+export function updatePanelPosition(panelId, position, sceneId) {
   return request({
     url: `${API_PREFIX}/${panelId}/position`,
     method: 'put',
-    data: { position }
+    data: { position, sceneId }
   })
 }
 
-export function updatePanelStyle(panelId, style) {
+export function updatePanelStyle(panelId, style, sceneId) {
   return request({
     url: `${API_PREFIX}/${panelId}/style`,
     method: 'put',
-    data: { style }
+    data: { style, sceneId }
   })
 }
 

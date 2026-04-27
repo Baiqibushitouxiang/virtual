@@ -19,14 +19,16 @@ public class SceneAssetService {
     private final SceneAssetMapper mapper;
     private final CosService cosService;
     private final ResourceUrlService resourceUrlService;
+    private final DataPanelService dataPanelService;
 
     @Value("${storage.type:local}")
     private String storageType;
 
-    public SceneAssetService(SceneAssetMapper mapper, CosService cosService, ResourceUrlService resourceUrlService) {
+    public SceneAssetService(SceneAssetMapper mapper, CosService cosService, ResourceUrlService resourceUrlService, DataPanelService dataPanelService) {
         this.mapper = mapper;
         this.cosService = cosService;
         this.resourceUrlService = resourceUrlService;
+        this.dataPanelService = dataPanelService;
     }
 
     public SceneAsset upload(MultipartFile file, String name, String description) throws Exception {
@@ -103,6 +105,7 @@ public class SceneAssetService {
     public void delete(Long id) throws Exception {
         SceneAsset asset = mapper.getById(id);
         if (asset != null) {
+            dataPanelService.deleteBySceneId(id);
             String filename = extractSceneFilename(asset.getPath());
             if ("cos".equalsIgnoreCase(storageType)) {
                 cosService.deleteObjectByKey("scenes/" + filename);

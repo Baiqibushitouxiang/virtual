@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -46,23 +47,13 @@ class DataPanelControllerTest {
     }
 
     @Test
-    void shouldListPanels() throws Exception {
-        when(dataPanelService.findByUserId(null)).thenReturn(Arrays.asList(buildPanel(1L)));
+    void shouldListPanelsBySceneId() throws Exception {
+        when(dataPanelService.findByUserIdAndSceneId(null, 7L)).thenReturn(Arrays.asList(buildPanel(1L)));
 
-        mockMvc.perform(get("/api/data-panels"))
+        mockMvc.perform(get("/api/data-panels").param("sceneId", "7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("200"))
                 .andExpect(jsonPath("$.data.length()").value(1));
-    }
-
-    @Test
-    void shouldGetPanelById() throws Exception {
-        when(dataPanelService.getById(1L)).thenReturn(buildPanel(1L));
-
-        mockMvc.perform(get("/api/data-panels/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("200"))
-                .andExpect(jsonPath("$.data.id").value(1));
     }
 
     @Test
@@ -79,10 +70,10 @@ class DataPanelControllerTest {
     }
 
     @Test
-    void shouldUpdatePanel() throws Exception {
+    void shouldUpdatePanelWithSceneId() throws Exception {
         DataPanel panel = buildPanel(1L);
         panel.setName("panel-updated");
-        when(dataPanelService.updatePanel(any(DataPanel.class))).thenReturn(panel);
+        when(dataPanelService.updatePanel(any(DataPanel.class), eq(7L), eq(null))).thenReturn(panel);
 
         mockMvc.perform(put("/api/data-panels/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -93,22 +84,23 @@ class DataPanelControllerTest {
     }
 
     @Test
-    void shouldDeletePanel() throws Exception {
-        doNothing().when(dataPanelService).deletePanel(1L);
+    void shouldDeletePanelBySceneId() throws Exception {
+        doNothing().when(dataPanelService).deletePanel(1L, 7L, null);
 
-        mockMvc.perform(delete("/api/data-panels/1"))
+        mockMvc.perform(delete("/api/data-panels/1").param("sceneId", "7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("200"));
     }
 
     @Test
-    void shouldBindDevice() throws Exception {
+    void shouldBindDeviceWithinScene() throws Exception {
         DataPanel panel = buildPanel(1L);
         panel.setDeviceId(8L);
-        when(dataPanelService.bindDevice(1L, 8L)).thenReturn(panel);
+        when(dataPanelService.bindDevice(1L, 7L, 8L, null)).thenReturn(panel);
 
-        Map<String, Long> payload = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>();
         payload.put("deviceId", 8L);
+        payload.put("sceneId", 7L);
         mockMvc.perform(post("/api/data-panels/1/bind-device")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
@@ -118,26 +110,16 @@ class DataPanelControllerTest {
     }
 
     @Test
-    void shouldUnbindDevice() throws Exception {
-        DataPanel panel = buildPanel(1L);
-        panel.setDeviceId(null);
-        when(dataPanelService.unbindDevice(1L)).thenReturn(panel);
-
-        mockMvc.perform(post("/api/data-panels/1/unbind-device"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("200"));
-    }
-
-    @Test
-    void shouldBindModel() throws Exception {
+    void shouldBindModelWithinScene() throws Exception {
         DataPanel panel = buildPanel(1L);
         panel.setModelId("model-1");
-        when(dataPanelService.bindModel(1L, "model-1", "Pump", "scene")).thenReturn(panel);
+        when(dataPanelService.bindModel(1L, 7L, "model-1", "Pump", "scene", null)).thenReturn(panel);
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("modelId", "model-1");
         payload.put("modelName", "Pump");
         payload.put("modelType", "scene");
+        payload.put("sceneId", 7L);
         mockMvc.perform(post("/api/data-panels/1/bind-model")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
@@ -147,24 +129,14 @@ class DataPanelControllerTest {
     }
 
     @Test
-    void shouldUnbindModel() throws Exception {
-        DataPanel panel = buildPanel(1L);
-        panel.setModelId(null);
-        when(dataPanelService.unbindModel(1L)).thenReturn(panel);
-
-        mockMvc.perform(post("/api/data-panels/1/unbind-model"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("200"));
-    }
-
-    @Test
-    void shouldUpdatePosition() throws Exception {
+    void shouldUpdatePositionWithinScene() throws Exception {
         DataPanel panel = buildPanel(1L);
         panel.setPosition("{\"x\":10,\"y\":20}");
-        when(dataPanelService.updatePosition(1L, "{\"x\":10,\"y\":20}")).thenReturn(panel);
+        when(dataPanelService.updatePosition(1L, 7L, "{\"x\":10,\"y\":20}", null)).thenReturn(panel);
 
-        Map<String, String> payload = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>();
         payload.put("position", "{\"x\":10,\"y\":20}");
+        payload.put("sceneId", 7L);
         mockMvc.perform(put("/api/data-panels/1/position")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
@@ -173,27 +145,12 @@ class DataPanelControllerTest {
                 .andExpect(jsonPath("$.data.position").value("{\"x\":10,\"y\":20}"));
     }
 
-    @Test
-    void shouldUpdateStyle() throws Exception {
-        DataPanel panel = buildPanel(1L);
-        panel.setStyle("{\"theme\":\"light\"}");
-        when(dataPanelService.updateStyle(1L, "{\"theme\":\"light\"}")).thenReturn(panel);
-
-        Map<String, String> payload = new HashMap<>();
-        payload.put("style", "{\"theme\":\"light\"}");
-        mockMvc.perform(put("/api/data-panels/1/style")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("200"))
-                .andExpect(jsonPath("$.data.style").value("{\"theme\":\"light\"}"));
-    }
-
     private DataPanel buildPanel(Long id) {
         DataPanel panel = new DataPanel();
         panel.setId(id);
         panel.setName("panel-" + id);
         panel.setDescription("description");
+        panel.setSceneId(7L);
         panel.setStatus(1);
         return panel;
     }

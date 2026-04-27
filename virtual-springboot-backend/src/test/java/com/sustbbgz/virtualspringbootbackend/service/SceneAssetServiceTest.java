@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SceneAssetServiceTest {
@@ -23,6 +24,9 @@ class SceneAssetServiceTest {
 
     @Mock
     private ResourceUrlService resourceUrlService;
+
+    @Mock
+    private DataPanelService dataPanelService;
 
     @InjectMocks
     private SceneAssetService sceneAssetService;
@@ -39,5 +43,17 @@ class SceneAssetServiceTest {
         sceneAssetService.updateTextureInfo(10L, metadata);
 
         verify(sceneAssetMapper).updateTextureInfo(10L, metadata);
+    }
+
+    @Test
+    void shouldDeletePanelsWhenSceneDeleted() throws Exception {
+        SceneAsset asset = new SceneAsset();
+        asset.setId(9L);
+        asset.setPath("scenes/example.glb");
+        when(sceneAssetMapper.getById(9L)).thenReturn(asset);
+
+        sceneAssetService.delete(9L);
+
+        verify(dataPanelService).deleteBySceneId(9L);
     }
 }

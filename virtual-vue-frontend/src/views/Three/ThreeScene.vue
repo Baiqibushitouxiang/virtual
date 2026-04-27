@@ -1,4 +1,4 @@
- <template>
+<template>
   <div id="three-scene">
     <ModelSelector
         v-if="isModelSelectorVisible"
@@ -8,7 +8,7 @@
         @close="isModelSelectorVisible = false"
     />
     
-    <!-- 组合模型选择器 -->
+    <!-- 缁勫悎妯″瀷閫夋嫨鍣?-->
     <CompositeModelSelector
         ref="compositeModelSelector"
         v-if="isCompositeModelSelectorVisible"
@@ -17,7 +17,7 @@
         @close="isCompositeModelSelectorVisible = false"
     />
     
-    <!-- 组合模型编辑器 -->
+    <!-- 缁勫悎妯″瀷缂栬緫鍣?-->
     <CompositeModelEditor
         ref="compositeModelEditor"
         v-if="isCompositeEditorVisible"
@@ -28,34 +28,34 @@
         @close="isCompositeEditorVisible = false"
     />
 
-    <!-- 工具栏 - 两侧布局 -->
+    <!-- 宸ュ叿鏍?- 涓や晶甯冨眬 -->
     <div v-if="sceneLoaded || showGateStation" class="toolbar">
       <div class="toolbar-left">
         <el-button type="warning" @click="goHome" size="small" title="返回主界面"><i class="fas fa-arrow-left"></i></el-button>
         <el-button-group v-if="sceneLoaded && !showGateStation">
           <el-button type="primary" @click="showModelSelector" :loading="loading" size="small">
-            <i class="el-icon-plus"></i> 选择模型
+            <i class="el-icon-plus"></i> 閫夋嫨妯″瀷
           </el-button>
           <el-button type="success" @click="saveScene" :disabled="!hasChanges" size="small">
-            <i class="el-icon-download"></i> 保存场景
+            <i class="el-icon-download"></i> 淇濆瓨鍦烘櫙
           </el-button>
         </el-button-group>
       </div>
 
       <div class="toolbar-center" v-if="sceneLoaded && !showGateStation">
         <el-button-group>
-          <el-button @click="undo" :disabled="currentHistoryIndex < 0" size="small" title="撤销 (Ctrl+Z)">
-            <i class="el-icon-refresh-left"></i> 撤销
+          <el-button @click="undo" :disabled="currentHistoryIndex < 0" size="small" title="鎾ら攢 (Ctrl+Z)">
+            <i class="el-icon-refresh-left"></i> 鎾ら攢
           </el-button>
-          <el-button @click="redo" size="small" title="清除所有模型">
-            <i class="el-icon-delete"></i> 清除场景
+          <el-button @click="redo" size="small" title="清除场景中的模型">
+            <i class="el-icon-delete"></i> 娓呴櫎鍦烘櫙
           </el-button>
-          <!-- 组合模型按钮 -->
-          <el-button @click="openCompositeModelSelector" size="small" title="使用组合模型">
-            <i class="el-icon-folder-opened"></i> 使用组合
+          <!-- 缁勫悎妯″瀷鎸夐挳 -->
+          <el-button @click="openCompositeModelSelector" size="small" title="浣跨敤缁勫悎妯″瀷">
+            <i class="el-icon-folder-opened"></i> 浣跨敤缁勫悎
           </el-button>
-          <el-button @click="openCompositeModelEditor" size="small" title="创建组合模型">
-            <i class="el-icon-folder-add"></i> 创建组合
+          <el-button @click="openCompositeModelEditor" size="small" title="鍒涘缓缁勫悎妯″瀷">
+            <i class="el-icon-folder-add"></i> 鍒涘缓缁勫悎
           </el-button>
         </el-button-group>
       </div>
@@ -66,72 +66,72 @@
               @click="toggleSkybox"
               :type="skyboxEnabled ? 'success' : 'default'"
               size="small"
-              title="切换天空背景"
+              title="鍒囨崲澶╃┖鑳屾櫙"
           >
             <i class="el-icon-sunny"></i> {{ skyboxEnabled ? '关闭天空' : '开启天空' }}
           </el-button>
-          <el-button @click="toggleDataPanelManager" size="small" title="数据展板管理">
-            <i class="el-icon-data-line"></i> 数据展板
+          <el-button @click="toggleDataPanelManager" size="small" title="鏁版嵁灞曟澘绠＄悊">
+            <i class="el-icon-data-line"></i> 鏁版嵁灞曟澘
           </el-button>
-          <el-button @click="openAllBoundPanels" size="small" title="打开所有已绑定展板" :disabled="boundPanelsCount === 0">
-            <i class="el-icon-video-play"></i> 打开全部
+          <el-button @click="openAllBoundPanels" size="small" title="鎵撳紑鎵€鏈夊凡缁戝畾灞曟澘" :disabled="boundPanelsCount === 0">
+            <i class="el-icon-video-play"></i> 鎵撳紑鍏ㄩ儴
           </el-button>
-          <el-button @click="exportSceneToGLB" size="small" title="导出为GLB格式">
-            <i class="el-icon-download"></i> 导出GLB
+          <el-button @click="exportSceneToGLB" size="small" title="瀵煎嚭涓篏LB鏍煎紡">
+            <i class="el-icon-download"></i> 瀵煎嚭GLB
           </el-button>
-          <el-button @click="exportSceneToJSON" size="small" title="导出为JSON格式">
-            <i class="el-icon-document"></i> 导出JSON
+          <el-button @click="exportSceneToJSON" size="small" title="瀵煎嚭涓篔SON鏍煎紡">
+            <i class="el-icon-document"></i> 瀵煎嚭JSON
           </el-button>
         </el-button-group>
 
-        <!-- 闸站场景专用按钮 -->
+        <!-- 闂哥珯鍦烘櫙涓撶敤鎸夐挳 -->
         <el-button-group v-if="showGateStation">
-          <el-button @click="refreshGateStation" size="small" title="刷新闸站场景">
-            <i class="el-icon-refresh"></i> 刷新
+          <el-button @click="refreshGateStation" size="small" title="鍒锋柊闂哥珯鍦烘櫙">
+            <i class="el-icon-refresh"></i> 鍒锋柊
           </el-button>
-          <el-button @click="openGateStationInNewTab" size="small" title="在新标签页打开">
-            <i class="el-icon-top-right"></i> 新标签页
+          <el-button @click="openGateStationInNewTab" size="small" title="鍦ㄦ柊鏍囩椤垫墦寮€">
+            <i class="el-icon-top-right"></i> 鏂版爣绛鹃〉
           </el-button>
         </el-button-group>
       </div>
 
-      <!-- 加载进度条 -->
+      <!-- 鍔犺浇杩涘害鏉?-->
       <el-progress v-if="loading" :percentage="loadingProgress" :show-text="false" class="loading-progress" />
     </div>
 
-    <!-- 主内容区域 -->
+    <!-- 涓诲唴瀹瑰尯鍩?-->
     <div class="main-content" :class="{ 'with-toolbar': sceneLoaded || showGateStation }">
-      <!-- 初始场景选择界面 -->
+      <!-- 鍒濆鍦烘櫙閫夋嫨鐣岄潰 -->
       <div v-if="!sceneLoaded && !showGateStation" class="scene-options">
         <h2>数字孪生场景编辑器</h2>
         <div class="scene-buttons">
           <el-button type="primary" @click="createNewScene" size="large">
-            <i class="el-icon-plus"></i> 创建新场景
+            <i class="el-icon-plus"></i> 鍒涘缓鏂板満鏅?
           </el-button>
           <el-button @click="$router.push({ name: 'SceneGallery' })" size="large">
-            <i class="el-icon-folder-opened"></i> 读取场景
+            <i class="el-icon-folder-opened"></i> 璇诲彇鍦烘櫙
           </el-button>
           <el-button @click="importScene" size="large">
-            <i class="el-icon-upload"></i> 导入场景
+            <i class="el-icon-upload"></i> 瀵煎叆鍦烘櫙
           </el-button>
           <el-button @click="openGateStationInterface" size="large">
-            <i class="el-icon-office-building"></i> 闸站场景
+            <i class="el-icon-office-building"></i> 闂哥珯鍦烘櫙
           </el-button>
         </div>
       </div>
 
-      <!-- 3D场景容器 -->
+      <!-- 3D鍦烘櫙瀹瑰櫒 -->
       <div v-if="sceneLoaded && !showGateStation" class="scene-container" id="scene-container">
-        <!-- Three.js场景将渲染到这里 -->
+        <!-- Three.js鍦烘櫙灏嗘覆鏌撳埌杩欓噷 -->
       </div>
 
-      <!-- 闸站场景容器 -->
+      <!-- 闂哥珯鍦烘櫙瀹瑰櫒 -->
       <div v-if="showGateStation" class="gate-station-container">
         <div v-if="gateStationLoading" class="gate-station-loading">
           <el-icon class="is-loading">
             <Loading />
           </el-icon>
-          <p>闸站场景加载中...</p>
+          <p>闂哥珯鍦烘櫙鍔犺浇涓?..</p>
         </div>
         <iframe
             ref="gateStationIframe"
@@ -141,7 +141,7 @@
         ></iframe>
       </div>
 
-      <!-- ObjectInfo 面板 -->
+      <!-- ObjectInfo 闈㈡澘 -->
       <ObjectInfo
           v-if="selectedModel && sceneLoaded && !showGateStation"
           :selectedModel="selectedModel"
@@ -155,73 +155,80 @@
           @remove-texture="handleRemoveTexture"
       />
 
-      <!-- WebSocket数据监控面板 - 多展板支持 -->
+      <!-- WebSocket鏁版嵁鐩戞帶闈㈡澘 - 澶氬睍鏉挎敮鎸?-->
       <DeviceDataPanel
           v-for="panel in openedPanels"
-          :key="panel.id"
+          :key="getPanelKey(panel)"
           :visible="true"
           :panelConfig="panel"
-          :boundModel="boundModels[panel.id]"
-          :modelBinding="panelBindings[panel.id] || null"
-          :bindMode="bindMode && bindingPanelId === panel.id"
+          :boundModel="boundModels[getPanelKey(panel)]"
+          :modelBinding="panelBindings[getPanelKey(panel)] || null"
+          :bindMode="bindMode && bindingPanelId === getPanelKey(panel)"
+          :sceneId="currentSceneId"
           @close="closePanel(panel)"
-          @startBind="startBindMode"
-          @cancelBind="cancelBind"
           @updatePanel="refreshPanels"
           @deletePanel="handleDeletePanel"
-          @unbindModel="handleUnbindModel"
+          @patchPanel="handlePatchPanel"
       />
 
-      <!-- 展板管理弹窗 -->
+      <!-- 灞曟澘绠＄悊寮圭獥 -->
       <DataPanelManager
           v-model:visible="showPanelManager"
+          :sceneId="currentSceneId"
+          :panels="allPanels"
           :openedPanelIds="openedPanelIds"
+          :devices="devices"
           @openPanel="openPanel"
           @closePanel="closePanel"
           @openAll="openAllPanels"
           @closeAll="closeAllPanels"
-          @refresh="refreshPanels"
+          @savePanel="handleSavePanel"
+          @deletePanel="handleDeletePanel"
+          @bindModel="startBindMode"
+          @unbindModel="handlePanelModelUnbind"
+          @bindDevice="handlePanelDeviceBind"
+          @unbindDevice="handlePanelDeviceUnbind"
       />
 
-      <!-- 操作提示 -->
+      <!-- 鎿嶄綔鎻愮ず -->
       <div v-if="showTips && sceneLoaded && !showGateStation" class="operation-tips">
         <div class="tips-content">
-          <h4>操作提示</h4>
+          <h4>鎿嶄綔鎻愮ず</h4>
           <ul>
-            <li><strong>Ctrl+Z:</strong> 撤销操作</li>
-            <li><strong>Delete:</strong> 删除选中模型</li>
-            <li><strong>鼠标左键:</strong> 选择模型</li>
-            <li><strong>鼠标右键:</strong> 旋转视角</li>
-            <li><strong>滚轮:</strong> 缩放视角</li>
-            <li><strong>天空背景:</strong> 点击工具栏中的"开启天空"按钮添加天空背景</li>
+            <li><strong>Ctrl+Z:</strong> 鎾ら攢鎿嶄綔</li>
+            <li><strong>Delete:</strong> 鍒犻櫎閫変腑妯″瀷</li>
+            <li><strong>榧犳爣宸﹂敭:</strong> 閫夋嫨妯″瀷</li>
+            <li><strong>榧犳爣鍙抽敭:</strong> 鏃嬭浆瑙嗚</li>
+            <li><strong>婊氳疆:</strong> 缂╂斁瑙嗚</li>
+            <li><strong>澶╃┖鑳屾櫙:</strong> 鐐瑰嚮宸ュ叿鏍忎腑鐨?寮€鍚ぉ绌?鎸夐挳娣诲姞澶╃┖鑳屾櫙</li>
           </ul>
           <el-button @click="showTips = false" size="small" type="text">
-            知道了
+            鐭ラ亾浜?
           </el-button>
         </div>
       </div>
 
-      <!-- 帮助按钮 -->
+      <!-- 甯姪鎸夐挳 -->
       <el-button
           v-if="sceneLoaded && !showGateStation"
           class="help-button"
           type="text"
           @click="showTips = !showTips"
-          title="显示操作帮助"
+          title="鏄剧ず鎿嶄綔甯姪"
       >
         <i class="el-icon-question"></i>
       </el-button>
     </div>
 
-    <!-- 保存场景对话框 -->
+    <!-- 淇濆瓨鍦烘櫙瀵硅瘽妗?-->
     <el-dialog
-        title="保存场景"
+        title="淇濆瓨鍦烘櫙"
         v-model="saveDialogVisible"
         width="400px"
         :before-close="handleSaveDialogClose"
     >
       <el-form :model="saveForm" label-width="80px">
-        <el-form-item label="场景名称" required>
+        <el-form-item label="鍦烘櫙鍚嶇О" required>
           <el-input
               v-model="saveForm.name"
               placeholder="请输入场景名称"
@@ -229,12 +236,12 @@
               show-word-limit
           />
         </el-form-item>
-        <el-form-item label="场景描述">
+        <el-form-item label="鍦烘櫙鎻忚堪">
           <el-input
               v-model="saveForm.description"
               type="textarea"
               :rows="3"
-              placeholder="请输入场景描述（可选）"
+              placeholder="璇疯緭鍏ュ満鏅弿杩帮紙鍙€夛級"
               maxlength="200"
               show-word-limit
           />
@@ -242,9 +249,9 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="saveDialogVisible = false">取消</el-button>
+        <el-button @click="saveDialogVisible = false">鍙栨秷</el-button>
         <el-button type="primary" @click="confirmSaveScene" :loading="saveLoading">
-          保存
+          淇濆瓨
         </el-button>
       </template>
     </el-dialog>
@@ -254,7 +261,17 @@
 <script>
 import { createCompositeModel, getCompositeModelComponents, getModelMenu, getFileUrl, getModelStaticUrl, getModelPathUrl, getScenePathUrl, getGateStationUrl } from "@/api/index.js";
 import { uploadScene, saveSceneTextures, getScene } from '@/api/scenes';
-import { getDataPanels, createDataPanel, deleteDataPanel, bindModel as bindModelApi } from '@/api/dataPanel';
+import {
+  getDataPanels,
+  createDataPanel,
+  updateDataPanel,
+  deleteDataPanel,
+  bindDevice as bindPanelDeviceApi,
+  unbindDevice as unbindPanelDeviceApi,
+  bindModel as bindModelApi,
+  unbindModel as unbindPanelModelApi
+} from '@/api/dataPanel';
+import { getAllDevices } from '@/api/device';
 import { getModelBindings, createModelBinding, updateModelBinding, deleteModelBindingBySceneAndModel } from '@/api/modelBinding';
 import { Loading } from '@element-plus/icons-vue';
 import * as THREE from "three";
@@ -304,20 +321,22 @@ export default {
         name: '',
         description: ''
       },
-      // 闸站场景相关数据
+      // 闂哥珯鍦烘櫙鐩稿叧鏁版嵁
       showGateStation: false,
       gateStationLoading: false,
       animateId: null,
-      // 防止组合模型重复保存
+      // 闃叉缁勫悎妯″瀷閲嶅淇濆瓨
       savingCompositeModel: false,
       saveCompositeModelTimeout: null,
-      // 贴图相关数据
-      modelTextures: new Map(), // 存储模型贴图信息
-      textureCache: new Map(), // 临时贴图缓存
-      // 数据监控面板 - 多展板支持
+      // 璐村浘鐩稿叧鏁版嵁
+      modelTextures: new Map(), // 瀛樺偍妯″瀷璐村浘淇℃伅
+      textureCache: new Map(), // 涓存椂璐村浘缂撳瓨
+      // 鏁版嵁鐩戞帶闈㈡澘 - 澶氬睍鏉挎敮鎸?
       showPanelManager: false,
       openedPanels: [],
       allPanels: [],
+      draftPanels: [],
+      devices: [],
       modelBindings: [],
       bindMode: false,
       bindingPanelId: null,
@@ -335,13 +354,13 @@ export default {
       return this.openedPanels.reduce((acc, panel) => {
         const binding = this.getBindingForPanel(panel);
         if (binding) {
-          acc[panel.id] = binding;
+          acc[this.getPanelKey(panel)] = binding;
         }
         return acc;
       }, {});
     },
     boundPanelsCount() {
-      return this.allPanels.filter(p => p.modelId).length;
+      return this.allPanels.filter(p => p.modelId || p.deviceId).length;
     }
   },
 
@@ -353,6 +372,7 @@ export default {
     }
     
     this.loadAllPanels();
+    this.loadDevices();
     this.loadSceneBindings();
     
     this.$nextTick(() => {
@@ -414,6 +434,126 @@ export default {
       return model?.userData?.sceneModelId || model?.uuid || model?.name;
     },
 
+    getPanelKey(panel) {
+      if (!panel) {
+        return null;
+      }
+      return panel._panelKey || (panel.id != null ? String(panel.id) : null);
+    },
+
+    normalizePanel(panel, preferredKey = null) {
+      const panelKey = preferredKey || panel?._panelKey || (panel?.id != null ? String(panel.id) : `panel-${Date.now()}`);
+      return {
+        ...panel,
+        _panelKey: panelKey
+      };
+    },
+
+    createDraftPanel(values) {
+      const panelKey = `draft-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+      return this.normalizePanel({
+        id: panelKey,
+        sceneId: null,
+        name: values.name,
+        description: values.description || '',
+        status: values.status ?? 1,
+        position: values.position || null,
+        size: values.size || null,
+        style: values.style || null,
+        deviceId: values.deviceId || null,
+        deviceName: values.deviceName || null,
+        modelId: values.modelId || null,
+        modelName: values.modelName || null,
+        modelType: values.modelType || null
+      }, panelKey);
+    },
+
+    normalizePanelForExport(panel) {
+      return {
+        name: panel.name,
+        description: panel.description || '',
+        status: panel.status ?? 1,
+        deviceId: panel.deviceId ?? null,
+        deviceName: panel.deviceName ?? null,
+        modelId: panel.modelId ?? null,
+        modelName: panel.modelName ?? null,
+        modelType: panel.modelType ?? null,
+        position: panel.position || null,
+        size: panel.size || null,
+        style: panel.style || null
+      };
+    },
+
+    normalizeImportedPanel(panel, index) {
+      return this.createDraftPanel({
+        name: panel?.name || `展板 ${index + 1}`,
+        description: panel?.description || '',
+        status: panel?.status ?? 1,
+        deviceId: panel?.deviceId ?? null,
+        deviceName: panel?.deviceName ?? null,
+        modelId: panel?.modelId ?? null,
+        modelName: panel?.modelName ?? null,
+        modelType: panel?.modelType ?? null,
+        position: panel?.position || null,
+        size: panel?.size || null,
+        style: panel?.style || null
+      });
+    },
+
+    resetPanelState({ clearDrafts = false } = {}) {
+      this.closeAllPanels();
+      this.allPanels = [];
+      if (clearDrafts) {
+        this.draftPanels = [];
+      }
+    },
+
+    reconcileOpenedPanels() {
+      const currentKeys = this.openedPanels.map(panel => this.getPanelKey(panel)).filter(Boolean);
+      this.openedPanels = currentKeys
+        .map(key => this.allPanels.find(panel => this.getPanelKey(panel) === key))
+        .filter(Boolean);
+
+      const nextBoundModels = {};
+      currentKeys.forEach(key => {
+        if (this.boundModels[key]) {
+          nextBoundModels[key] = this.boundModels[key];
+        }
+      });
+      this.boundModels = nextBoundModels;
+    },
+
+    async persistDraftPanels(sceneId) {
+      if (!sceneId || this.draftPanels.length === 0) {
+        return;
+      }
+
+      const createdPanels = [];
+      for (const draftPanel of this.draftPanels) {
+        const payload = {
+          name: draftPanel.name,
+          description: draftPanel.description,
+          status: draftPanel.status,
+          position: draftPanel.position,
+          size: draftPanel.size,
+          style: draftPanel.style,
+          deviceId: draftPanel.deviceId,
+          deviceName: draftPanel.deviceName,
+          modelId: draftPanel.modelId,
+          modelName: draftPanel.modelName,
+          modelType: draftPanel.modelType,
+          sceneId
+        };
+        const response = await createDataPanel(payload);
+        const created = response.data || response;
+        createdPanels.push(this.normalizePanel(created, this.getPanelKey(draftPanel)));
+      }
+
+      this.allPanels = createdPanels;
+      this.draftPanels = [];
+      this.reconcileOpenedPanels();
+    },
+
     normalizeBindingPayload(binding) {
       return {
         ...binding,
@@ -437,13 +577,14 @@ export default {
           deviceName: binding.deviceName,
           dataType: binding.dataType,
           ruleStatus: binding.ruleStatus
-        }))
+        })),
+        panels: this.allPanels.map(panel => this.normalizePanelForExport(panel))
       };
     },
 
     parseSceneMetadata(textureInfo) {
       if (!textureInfo) {
-        return { version: 'legacy', textures: {}, bindings: [] };
+        return { version: 'legacy', textures: {}, bindings: [], panels: [] };
       }
 
       try {
@@ -452,17 +593,19 @@ export default {
           return {
             version: parsed.version || '1.0.0',
             textures: parsed.textures || {},
-            bindings: parsed.bindings || []
+            bindings: parsed.bindings || [],
+            panels: parsed.panels || []
           };
         }
         return {
           version: 'legacy',
           textures: parsed || {},
-          bindings: []
+          bindings: [],
+          panels: []
         };
       } catch (error) {
-        console.error('解析场景元数据失败:', error);
-        return { version: 'legacy', textures: {}, bindings: [] };
+        console.error('瑙ｆ瀽鍦烘櫙鍏冩暟鎹け璐?', error);
+        return { version: 'legacy', textures: {}, bindings: [], panels: [] };
       }
     },
 
@@ -470,6 +613,7 @@ export default {
       const version = sceneData?.version || 'legacy';
       const models = Array.isArray(sceneData?.models) ? sceneData.models : [];
       const bindings = Array.isArray(sceneData?.bindings) ? sceneData.bindings : [];
+      const panels = Array.isArray(sceneData?.panels) ? sceneData.panels : [];
       const skybox = sceneData?.skybox || { enabled: !!sceneData?.skyboxEnabled };
       const sceneMeta = sceneData?.sceneMeta || {};
 
@@ -482,7 +626,7 @@ export default {
           return {
             id: model.id || model.uuid || model.sceneModelId || `imported-model-${index}`,
             uuid: model.uuid || model.id || model.sceneModelId || `imported-model-${index}`,
-            name: model.name || `模型_${index + 1}`,
+            name: model.name || `妯″瀷_${index + 1}`,
             file,
             position: model.position || { x: 0, y: 0, z: 0 },
             rotation: model.rotation || { x: 0, y: 0, z: 0 },
@@ -491,7 +635,8 @@ export default {
             userData: model.userData || {}
           };
         }).filter(model => !!model.file),
-        bindings
+        bindings,
+        panels: panels.map((panel, index) => this.normalizeImportedPanel(panel, index))
       };
     },
 
@@ -554,62 +699,63 @@ export default {
           deviceName: binding.deviceName,
           dataType: binding.dataType,
           ruleStatus: binding.ruleStatus
-        }))
+        })),
+        panels: this.allPanels.map(panel => this.normalizePanelForExport(panel))
       };
     },
-    // 添加测试贴图功能的方法
+    // 娣诲姞娴嬭瘯璐村浘鍔熻兘鐨勬柟娉?
     testTextureApplication() {
-      console.log('=== 测试贴图功能 ===');
+      console.log('=== 娴嬭瘯璐村浘鍔熻兘 ===');
       if (!this.selectedModel) {
         console.log('没有选中的模型');
         this.$message.warning('请先选择一个模型');
         return;
       }
       
-      console.log('选中的模型:', this.selectedModel);
+      console.log('閫変腑鐨勬ā鍨?', this.selectedModel);
       
-      // 创建一个明显的测试贴图
+      // 鍒涘缓涓€涓槑鏄剧殑娴嬭瘯璐村浘
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
       
-      // 创建非常明显的图案 - 四个大色块
-      ctx.fillStyle = '#FF0000'; // 红色
+      // 鍒涘缓闈炲父鏄庢樉鐨勫浘妗?- 鍥涗釜澶ц壊鍧?
+      ctx.fillStyle = '#FF0000'; // 绾㈣壊
       ctx.fillRect(0, 0, 128, 128);
       
-      ctx.fillStyle = '#00FF00'; // 绿色
+      ctx.fillStyle = '#00FF00'; // 缁胯壊
       ctx.fillRect(128, 0, 128, 128);
       
-      ctx.fillStyle = '#0000FF'; // 蓝色
+      ctx.fillStyle = '#0000FF'; // 钃濊壊
       ctx.fillRect(0, 128, 128, 128);
       
-      ctx.fillStyle = '#FFFF00'; // 黄色
+      ctx.fillStyle = '#FFFF00'; // 榛勮壊
       ctx.fillRect(128, 128, 128, 128);
       
-      // 添加粗体文字标识
+      // 娣诲姞绮椾綋鏂囧瓧鏍囪瘑
       ctx.font = 'bold 30px Arial';
       ctx.fillStyle = '#000000';
       ctx.textAlign = 'center';
       ctx.fillText('TEST', 128, 140);
       
       const dataUrl = canvas.toDataURL();
-      console.log('生成测试贴图数据:', dataUrl.substring(0, 100));
+      console.log('鐢熸垚娴嬭瘯璐村浘鏁版嵁:', dataUrl.substring(0, 100));
       
       this.previewTextureOnModel(this.selectedModel, dataUrl);
       this.$message.info("测试贴图已应用，请观察模型变化");
     },
     
-    // 测试移除贴图功能
+    // 娴嬭瘯绉婚櫎璐村浘鍔熻兘
     testRemoveTexture() {
-      console.log('=== 测试移除贴图功能 ===');
+      console.log('=== 娴嬭瘯绉婚櫎璐村浘鍔熻兘 ===');
       if (!this.selectedModel) {
         console.log('没有选中的模型');
         this.$message.warning('请先选择一个模型');
         return;
       }
       
-      console.log('选中的模型:', this.selectedModel);
+      console.log('閫変腑鐨勬ā鍨?', this.selectedModel);
       this.removeTextureFromModel(this.selectedModel);
       this.$message.info("测试移除贴图已完成");
     },
@@ -618,21 +764,22 @@ export default {
       this.currentSceneId = null;
       this.currentSceneName = '';
       this.currentSceneDescription = '';
+      this.resetPanelState({ clearDrafts: true });
       this.sceneLoaded = true;
       this.$nextTick(() => {
         this.initScene();
       });
     },
-    // 添加防抖的窗口调整大小处理
+    // 娣诲姞闃叉姈鐨勭獥鍙ｈ皟鏁村ぇ灏忓鐞?
     debouncedResize: null,
     
     onWindowResize() {
-      // 清除之前的防抖定时器
+      // 娓呴櫎涔嬪墠鐨勯槻鎶栧畾鏃跺櫒
       if (this.debouncedResize) {
         clearTimeout(this.debouncedResize);
       }
       
-      // 设置新的防抖定时器
+      // 璁剧疆鏂扮殑闃叉姈瀹氭椂鍣?
       this.debouncedResize = setTimeout(() => {
         this.handleResize();
       }, 100);
@@ -671,13 +818,13 @@ export default {
         return;
       }
 
-      // 检查容器尺寸
+      // 妫€鏌ュ鍣ㄥ昂瀵?
       const width = container.clientWidth;
       const height = container.clientHeight;
       
       if (width === 0 || height === 0) {
         console.warn('Container has zero dimensions, waiting for layout...');
-        // 可以添加重试逻辑或使用默认尺寸
+        // 鍙互娣诲姞閲嶈瘯閫昏緫鎴栦娇鐢ㄩ粯璁ゅ昂瀵?
         setTimeout(() => {
           this.initScene();
         }, 100);
@@ -689,13 +836,13 @@ export default {
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0xeeeeee);
 
-      this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000); // 增加远平面距离
+      this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000); // 澧炲姞杩滃钩闈㈣窛绂?
       this.camera.position.set(0, 9, 4);
       this.camera.updateProjectionMatrix();
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(window.devicePixelRatio); // 添加像素比例支持
+      this.renderer.setPixelRatio(window.devicePixelRatio); // 娣诲姞鍍忕礌姣斾緥鏀寔
       container.appendChild(this.renderer.domElement);
 
       this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -705,14 +852,14 @@ export default {
       this.addLighting();
 
       this.helperGroup = new THREE.Group();
-      // 创建更大的网格以确保完整显示
+      // 鍒涘缓鏇村ぇ鐨勭綉鏍间互纭繚瀹屾暣鏄剧ず
       const gridHelper = new THREE.GridHelper(2000, 2000, 0x888888, 0xcccccc);
       gridHelper.material.opacity = 0.3;
       gridHelper.material.transparent = true;
       this.helperGroup.add(gridHelper);
       this.scene.add(this.helperGroup);
 
-      // 确保绑定正确的 this 上下文
+      // 纭繚缁戝畾姝ｇ‘鐨?this 涓婁笅鏂?
       this.boundOnWindowResize = this.onWindowResize.bind(this);
       window.addEventListener("resize", this.boundOnWindowResize);
       
@@ -724,7 +871,7 @@ export default {
 
       this.animate();
 
-      // 统一设置窗口引用
+      // 缁熶竴璁剧疆绐楀彛寮曠敤
       window.threeScene = {
         scene: this.scene,
         camera: this.camera,
@@ -771,7 +918,7 @@ export default {
       const ambientLight = new THREE.AmbientLight(0x404040);
       this.scene.add(ambientLight);
       
-      // 添加额外的光源以确保网格各部分都能被照亮
+      // 娣诲姞棰濆鐨勫厜婧愪互纭繚缃戞牸鍚勯儴鍒嗛兘鑳借鐓т寒
       const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
       light2.position.set(0, -10, -10);
       this.scene.add(light2);
@@ -785,7 +932,7 @@ export default {
       try {
         const response = await fetch(`/scenes/${sceneName}.json`);
         if (!response.ok) {
-          throw new Error('无法加载场景文件');
+          throw new Error('鏃犳硶鍔犺浇鍦烘櫙鏂囦欢');
         }
         const sceneData = await response.json();
 
@@ -799,11 +946,11 @@ export default {
             this.setSkyboxBackground();
           }
 
-          console.log(`场景 ${sceneName} 加载成功`);
+          console.log(`鍦烘櫙 ${sceneName} 鍔犺浇鎴愬姛`);
         });
       } catch (error) {
-        console.error('加载场景失败:', error);
-        this.$message.error(`加载场景失败: ${error.message}`);
+        console.error('鍔犺浇鍦烘櫙澶辫触:', error);
+        this.$message.error(`鍔犺浇鍦烘櫙澶辫触: ${error.message}`);
       }
     },
 
@@ -827,7 +974,7 @@ export default {
       try {
         const glbBlob = await this.exportSceneToGLBBlob();
         if (!glbBlob) {
-          this.$message.error('场景导出失败');
+          this.$message.error('鍦烘櫙瀵煎嚭澶辫触');
           this.saveLoading = false;
           return;
         }
@@ -844,21 +991,25 @@ export default {
             this.currentSceneId
         );
         
-        // 保存贴图信息
+        // 淇濆瓨璐村浘淇℃伅
         if (sceneAsset && sceneAsset.id) {
           this.currentSceneId = sceneAsset.id;
           this.currentSceneName = sceneAsset.name || this.saveForm.name.trim();
           this.currentSceneDescription = sceneAsset.description || this.saveForm.description.trim();
+          await this.syncSceneBindings(sceneAsset.id);
+          await this.persistDraftPanels(sceneAsset.id);
           const texturesToSave = this.saveSceneTextures(sceneAsset.id);
-          if (texturesToSave.length > 0) {
-            const textureInfo = JSON.stringify(Object.fromEntries(this.textureCache));
+          const shouldSaveMetadata = texturesToSave.length > 0 || this.modelBindings.length > 0;
+          if (shouldSaveMetadata) {
+            const textureInfo = JSON.stringify(this.buildSceneMetadataPayload());
             try {
               await saveSceneTextures(sceneAsset.id, textureInfo);
-              console.log('贴图信息保存成功');
+              console.log('璐村浘淇℃伅淇濆瓨鎴愬姛');
             } catch (err) {
-              console.error('保存贴图信息失败:', err);
+              console.error('淇濆瓨璐村浘淇℃伅澶辫触:', err);
             }
           }
+          await this.loadAllPanels(sceneAsset.id);
         }
 
         this.$message.success('场景已保存到场景库');
@@ -866,8 +1017,8 @@ export default {
         this.resetSaveForm();
 
       } catch (err) {
-        console.error('保存场景失败:', err);
-        this.$message.error(`保存场景失败: ${err.message}`);
+        console.error('淇濆瓨鍦烘櫙澶辫触:', err);
+        this.$message.error(`淇濆瓨鍦烘櫙澶辫触: ${err.message}`);
       } finally {
         this.saveLoading = false;
       }
@@ -875,7 +1026,7 @@ export default {
 
     handleSaveDialogClose(done) {
       if (this.saveLoading) {
-        this.$message.warning('正在保存，请稍候...');
+        this.$message.warning('姝ｅ湪淇濆瓨锛岃绋嶅€?..');
         return;
       }
       this.resetSaveForm();
@@ -938,22 +1089,22 @@ export default {
     onClick(event) {
       if (!this.sceneLoaded || this.showGateStation) return;
 
-      console.log("点击事件触发");
+      console.log("鐐瑰嚮浜嬩欢瑙﹀彂");
 
       const container = document.querySelector('.scene-container');
       const rect = container.getBoundingClientRect();
       this.mouse.x = (event.clientX - rect.left) / rect.width * 2 - 1;
       this.mouse.y = - (event.clientY - rect.top) / rect.height * 2 + 1;
 
-      console.log("鼠标坐标:", this.mouse.x, this.mouse.y);
+      console.log("榧犳爣鍧愭爣:", this.mouse.x, this.mouse.y);
 
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
       const clickableObjects = this.scene.children.filter(child => child !== this.helperGroup);
-      console.log("可点击对象数量:", clickableObjects.length);
+      console.log("鍙偣鍑诲璞℃暟閲?", clickableObjects.length);
 
       const intersects = this.raycaster.intersectObjects(clickableObjects, true);
-      console.log("射线检测结果:", intersects);
+      console.log("灏勭嚎妫€娴嬬粨鏋?", intersects);
 
       if (intersects.length > 0) {
         let selectedObject = intersects[0].object;
@@ -961,27 +1112,27 @@ export default {
           selectedObject = selectedObject.parent;
         }
 
-        console.log("找到模型:", selectedObject);
+        console.log("鎵惧埌妯″瀷:", selectedObject);
         if (this.bindMode) {
           this.bindModelToPanel(selectedObject);
         } else {
           this.selectModel(selectedObject);
-          console.log("选中的模型:", this.selectedModel);
+          console.log("閫変腑鐨勬ā鍨?", this.selectedModel);
         }
       } else {
-        console.log("没有找到模型，取消选中");
+        console.log("娌℃湁鎵惧埌妯″瀷锛屽彇娑堥€変腑");
         this.deselectModel();
       }
     },
 
     selectModel(model) {
-      console.log("selectModel 被调用，模型:", model);
+      console.log("selectModel 琚皟鐢紝妯″瀷:", model);
 
       this.deselectModel();
 
       this.selectedModel = model;
       this.selectedModel.boundData = this.getBindingForModel(this.getModelStorageId(model));
-      console.log("selectedModel 已设置:", this.selectedModel);
+      console.log("selectedModel 宸茶缃?", this.selectedModel);
 
       this.addSelectionEffect(model);
 
@@ -998,22 +1149,22 @@ export default {
     addSelectionEffect(model) {
       model.traverse(child => {
         if (child.isMesh) {
-          // 保存原始材质（如果尚未保存）
+          // 淇濆瓨鍘熷鏉愯川锛堝鏋滃皻鏈繚瀛橈級
           if (!child.userData.originalMaterial) {
             child.userData.originalMaterial = child.material.clone();
           }
 
-          // 创建高亮材质（基于当前材质）
+          // 鍒涘缓楂樹寒鏉愯川锛堝熀浜庡綋鍓嶆潗璐級
           const highlightMaterial = child.material.clone();
           
-          // 添加轮廓光效果而不是改变颜色
-          // 通过添加轻微的自发光来表示选中状态
+          // 娣诲姞杞粨鍏夋晥鏋滆€屼笉鏄敼鍙橀鑹?
+          // 閫氳繃娣诲姞杞诲井鐨勮嚜鍙戝厜鏉ヨ〃绀洪€変腑鐘舵€?
           if (child.material.map) {
-            // 对于有贴图的材质，添加非常轻微的发光效果
+            // 瀵逛簬鏈夎创鍥剧殑鏉愯川锛屾坊鍔犻潪甯歌交寰殑鍙戝厜鏁堟灉
             highlightMaterial.emissive = new THREE.Color(0x333333);
             highlightMaterial.emissiveIntensity = 0.4;
           } else {
-            // 对于没有贴图的材质，使用绿色高亮
+            // 瀵逛簬娌℃湁璐村浘鐨勬潗璐紝浣跨敤缁胯壊楂樹寒
             highlightMaterial.emissive = new THREE.Color(0x00ff00);
             highlightMaterial.emissiveIntensity = 0.3;
           }
@@ -1026,11 +1177,11 @@ export default {
     removeSelectionEffect(model) {
       model.traverse(child => {
         if (child.isMesh && child.userData.originalMaterial) {
-          // 恢复原始材质（带贴图的材质）
+          // 鎭㈠鍘熷鏉愯川锛堝甫璐村浘鐨勬潗璐級
           const originalMaterial = child.userData.originalMaterial;
           child.material = originalMaterial;
           
-          // 注意：不要删除originalMaterial引用，因为我们可能还会再次选中这个模型
+          // 娉ㄦ剰锛氫笉瑕佸垹闄riginalMaterial寮曠敤锛屽洜涓烘垜浠彲鑳借繕浼氬啀娆￠€変腑杩欎釜妯″瀷
         }
       });
     },
@@ -1047,17 +1198,17 @@ export default {
         const response = await getModelMenu();
         if (response && response.data) {
           this.modelData = response.data;
-          console.log('模型数据加载成功:', this.modelData);
-          // 通知组合模型编辑器数据已加载
+          console.log('妯″瀷鏁版嵁鍔犺浇鎴愬姛:', this.modelData);
+          // 閫氱煡缁勫悎妯″瀷缂栬緫鍣ㄦ暟鎹凡鍔犺浇
           if (this.isCompositeEditorVisible && this.$refs.compositeModelEditor) {
-            console.log('通知组合模型编辑器数据已加载');
+            console.log('閫氱煡缁勫悎妯″瀷缂栬緫鍣ㄦ暟鎹凡鍔犺浇');
             this.$refs.compositeModelEditor.receiveModelData(this.modelData);
           }
         }
-        return this.modelData; // 返回数据
+        return this.modelData; // 杩斿洖鏁版嵁
       } catch (error) {
-        console.error('加载模型数据失败:', error);
-        this.$message.error('加载模型数据失败: ' + (error.message || '未知错误'));
+        console.error('鍔犺浇妯″瀷鏁版嵁澶辫触:', error);
+        this.$message.error('鍔犺浇妯″瀷鏁版嵁澶辫触: ' + (error.message || '鏈煡閿欒'));
         throw error;
       } finally {
         this.loading = false;
@@ -1102,15 +1253,15 @@ export default {
       }
 
       this.selectedModel = null;
-      console.log(`模型 ${model.name} 已被删除`);
+      console.log(`妯″瀷 ${model.name} 宸茶鍒犻櫎`);
     },
 
-    // 闸站场景方法
+    // 闂哥珯鍦烘櫙鏂规硶
     openGateStationInterface() {
       this.showGateStation = true;
       this.gateStationLoading = true;
 
-      // 清理3D场景
+      // 娓呯悊3D鍦烘櫙
       this.cleanupThreeScene();
     },
 
@@ -1133,17 +1284,17 @@ export default {
 
     onIframeLoad() {
       this.gateStationLoading = false;
-      console.log('闸站场景加载完成');
+      console.log('闂哥珯鍦烘櫙鍔犺浇瀹屾垚');
     },
 
     cleanupThreeScene() {
-      // 暂停动画
+      // 鏆傚仠鍔ㄧ敾
       if (this.animateId) {
         cancelAnimationFrame(this.animateId);
         this.animateId = null;
       }
 
-      // 移除渲染器
+      // 绉婚櫎娓叉煋鍣?
       if (this.renderer) {
         const container = document.querySelector('.scene-container');
         if (container && this.renderer.domElement) {
@@ -1153,7 +1304,7 @@ export default {
         this.renderer = null;
       }
 
-      // 清理其他资源
+      // 娓呯悊鍏朵粬璧勬簮
       this.scene = null;
       this.camera = null;
       this.controls = null;
@@ -1165,6 +1316,7 @@ export default {
       this.currentSceneId = null;
       this.currentSceneName = '';
       this.currentSceneDescription = '';
+      this.resetPanelState({ clearDrafts: true });
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.json,.glb,.gltf';
@@ -1180,6 +1332,9 @@ export default {
               const imported = this.normalizeSceneImportData(JSON.parse(reader.result));
               this.sceneLoaded = true;
               this.modelBindings = imported.bindings || [];
+              this.draftPanels = imported.panels || [];
+              this.allPanels = this.draftPanels.map(panel => this.normalizePanel(panel, this.getPanelKey(panel)));
+              this.reconcileOpenedPanels();
               this.$nextTick(() => {
                 this.initScene();
                 this.loadModels(imported.models);
@@ -1244,12 +1399,12 @@ export default {
               link.download = 'scene.glb';
               link.click();
               URL.revokeObjectURL(link.href);
-              this.$message.success('GLB导出成功');
+              this.$message.success('GLB瀵煎嚭鎴愬姛');
             }
           },
           (error) => {
-            console.error('GLB导出失败:', error);
-            this.$message.error('GLB导出失败');
+            console.error('GLB瀵煎嚭澶辫触:', error);
+            this.$message.error('GLB瀵煎嚭澶辫触');
           },
           { binary: true }
       );
@@ -1260,7 +1415,7 @@ export default {
     async exportSceneToGLBBlob() {
       return new Promise((resolve, reject) => {
         if (!this.scene || !this.helperGroup) {
-          reject(new Error('场景未初始化'));
+          reject(new Error('鍦烘櫙鏈垵濮嬪寲'));
           return;
         }
 
@@ -1328,7 +1483,7 @@ export default {
         const operation = this.operationHistory[this.currentHistoryIndex];
         this.executeUndo(operation);
         this.currentHistoryIndex--;
-        this.$message.success('撤销操作');
+        this.$message.success('鎾ら攢鎿嶄綔');
       }
     },
 
@@ -1338,11 +1493,11 @@ export default {
     clearAllModels() {
       if (!this.scene) return;
       this.$confirm('确定要清除场景中的所有模型吗？此操作不可撤销。', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: '纭畾',
+        cancelButtonText: '鍙栨秷',
         type: 'warning'
       }).then(() => {
-        // 获取所有模型（排除辅助对象）
+        // 鑾峰彇鎵€鏈夋ā鍨嬶紙鎺掗櫎杈呭姪瀵硅薄锛?
         const models = this.scene.children.filter(child =>
             child !== this.helperGroup && child.isGroup
         );
@@ -1352,7 +1507,7 @@ export default {
 
         this.deselectModel();
 
-        // 重置操作历史
+        // 閲嶇疆鎿嶄綔鍘嗗彶
         this.operationHistory = [];
         this.currentHistoryIndex = -1;
         this.hasChanges = false;
@@ -1435,7 +1590,7 @@ export default {
     },
 
     handleKeyDown(event) {
-      if (this.showGateStation) return; // 闸站场景中不响应快捷键
+      if (this.showGateStation) return; // 闂哥珯鍦烘櫙涓笉鍝嶅簲蹇嵎閿?
 
       if (event.ctrlKey || event.metaKey) {
         switch (event.key.toLowerCase()) {
@@ -1456,6 +1611,9 @@ export default {
 
     goHome() {
       this.closeAllPanels();
+      this.allPanels = [];
+      this.draftPanels = [];
+      this.modelBindings = [];
       if (this.showGateStation) {
         this.closeGateStation();
       } else if (this.sceneLoaded) {
@@ -1483,15 +1641,15 @@ export default {
     setSolidColor(color) {
       this.scene.background = new THREE.Color(color);
       this.skyboxEnabled = false;
-      this.$message.success(`背景颜色已设置为 ${color}`);
+      this.$message.success(`鑳屾櫙棰滆壊宸茶缃负 ${color}`);
     },
 
     setDynamicSky() {
-      // 简化的动态天空实现
+      // 绠€鍖栫殑鍔ㄦ€佸ぉ绌哄疄鐜?
       const skyColor = new THREE.Color(0x87CEEB);
       this.scene.background = skyColor;
       this.skyboxEnabled = false;
-      this.$message.success('动态天空已启用（基础版）');
+      this.$message.success('鍔ㄦ€佸ぉ绌哄凡鍚敤锛堝熀纭€鐗堬級');
     },
     clearBackground() {
       this.scene.background = null;
@@ -1515,10 +1673,30 @@ export default {
       this.showPanelManager = !this.showPanelManager;
     },
 
-    async loadAllPanels() {
+    async loadDevices() {
       try {
-        const res = await getDataPanels();
-        this.allPanels = res.data || res || [];
+        const response = await getAllDevices();
+        this.devices = response.data || response || [];
+      } catch (error) {
+        console.error('load devices failed:', error);
+        this.devices = [];
+      }
+    },
+
+    async loadAllPanels(sceneId = this.currentSceneId) {
+      if (!sceneId) {
+        this.allPanels = this.draftPanels.map(panel => this.normalizePanel(panel, this.getPanelKey(panel)));
+        this.reconcileOpenedPanels();
+        return;
+      }
+      try {
+        const res = await getDataPanels({ sceneId });
+        const panels = res.data || res || [];
+        this.allPanels = panels.map(panel => {
+          const existing = this.allPanels.find(item => item.id === panel.id);
+          return this.normalizePanel(panel, existing ? this.getPanelKey(existing) : null);
+        });
+        this.reconcileOpenedPanels();
       } catch (e) {
         console.error('加载展板列表失败:', e);
         this.allPanels = [];
@@ -1548,7 +1726,14 @@ export default {
       if (!panel?.modelId) {
         return null;
       }
-      return this.getBindingForModel(panel.modelId);
+      const binding = this.getBindingForModel(panel.modelId);
+      if (!binding) {
+        return null;
+      }
+      if (this.currentSceneId && binding.sceneId && String(binding.sceneId) !== String(this.currentSceneId)) {
+        return null;
+      }
+      return binding;
     },
 
     async handleSaveModelBinding(binding) {
@@ -1608,9 +1793,9 @@ export default {
     },
 
     openPanel(panel) {
-      const exists = this.openedPanels.find(p => p.id === panel.id);
+      const exists = this.openedPanels.find(p => this.getPanelKey(p) === this.getPanelKey(panel));
       if (!exists) {
-        this.openedPanels.push(panel);
+        this.openedPanels.push(this.normalizePanel(panel, this.getPanelKey(panel)));
         if (panel.modelId) {
           this.findAndBindModel(panel);
         }
@@ -1618,10 +1803,11 @@ export default {
     },
 
     closePanel(panel) {
-      const index = this.openedPanels.findIndex(p => p.id === panel.id);
+      const panelKey = this.getPanelKey(panel);
+      const index = this.openedPanels.findIndex(p => this.getPanelKey(p) === panelKey);
       if (index > -1) {
         this.openedPanels.splice(index, 1);
-        delete this.boundModels[panel.id];
+        delete this.boundModels[panelKey];
       }
     },
 
@@ -1640,30 +1826,126 @@ export default {
 
     async refreshPanels() {
       await this.loadAllPanels();
-      this.openedPanels = this.openedPanels.map(opened => {
-        const updated = this.allPanels.find(p => p.id === opened.id);
-        return updated || opened;
-      });
+    },
+
+    async handleSavePanel({ existingPanel, values }) {
+      try {
+        if (existingPanel) {
+          if (this.currentSceneId && typeof existingPanel.id === 'number') {
+            await updateDataPanel(existingPanel.id, {
+              ...existingPanel,
+              ...values,
+              sceneId: this.currentSceneId
+            });
+            await this.refreshPanels();
+          } else {
+            this.draftPanels = this.draftPanels.map(panel => (
+              this.getPanelKey(panel) === this.getPanelKey(existingPanel)
+                ? this.normalizePanel({ ...panel, ...values }, this.getPanelKey(panel))
+                : panel
+            ));
+            await this.refreshPanels();
+          }
+        } else if (this.currentSceneId) {
+          await createDataPanel({
+            ...values,
+            sceneId: this.currentSceneId,
+            status: 1
+          });
+          await this.refreshPanels();
+        } else {
+          this.draftPanels.push(this.createDraftPanel(values));
+          await this.refreshPanels();
+        }
+      } catch (error) {
+        console.error('保存展板失败:', error);
+        this.$message.error('保存展板失败');
+      }
+    },
+
+    async handlePanelDeviceBind({ panel, deviceId }) {
+      if (!panel || !deviceId) {
+        return;
+      }
+
+      try {
+        const selectedDevice = this.devices.find(item => item.id === deviceId) || null;
+        if (this.currentSceneId && typeof panel.id === 'number') {
+          await bindPanelDeviceApi(panel.id, deviceId, this.currentSceneId);
+          await this.refreshPanels();
+        } else {
+          this.handlePatchPanel({
+            panelId: panel.id,
+            changes: {
+              deviceId,
+              deviceName: selectedDevice?.name || null
+            }
+          });
+        }
+        this.$message.success('设备绑定成功');
+      } catch (error) {
+        console.error('bind panel device failed:', error);
+        this.$message.error('设备绑定失败');
+      }
+    },
+
+    async handlePanelDeviceUnbind(panel) {
+      if (!panel) {
+        return;
+      }
+
+      try {
+        if (this.currentSceneId && typeof panel.id === 'number') {
+          await unbindPanelDeviceApi(panel.id, this.currentSceneId);
+          await this.refreshPanels();
+        } else {
+          this.handlePatchPanel({
+            panelId: panel.id,
+            changes: {
+              deviceId: null,
+              deviceName: null
+            }
+          });
+        }
+        this.$message.success('设备绑定已解除');
+      } catch (error) {
+        console.error('unbind panel device failed:', error);
+        this.$message.error('解除设备绑定失败');
+      }
+    },
+
+    handlePatchPanel({ panelId, changes }) {
+      const patch = (panels) => panels.map(panel => (
+        panel.id === panelId
+          ? this.normalizePanel({ ...panel, ...changes }, this.getPanelKey(panel))
+          : panel
+      ));
+
+      this.draftPanels = patch(this.draftPanels);
+      this.allPanels = patch(this.allPanels);
+      this.openedPanels = patch(this.openedPanels);
     },
 
     async handleDeletePanel(panel) {
       try {
-        await this.$confirm(`确定要删除展板 "${panel.name}" 吗？`, '提示', { type: 'warning' });
-        await deleteDataPanel(panel.id);
+        if (this.currentSceneId && typeof panel.id === 'number') {
+          await deleteDataPanel(panel.id, this.currentSceneId);
+        } else {
+          this.draftPanels = this.draftPanels.filter(item => this.getPanelKey(item) !== this.getPanelKey(panel));
+        }
         this.closePanel(panel);
         await this.refreshPanels();
         this.$message.success('展板已删除');
       } catch (e) {
-        if (e !== 'cancel') {
-          console.error('删除展板失败:', e);
-        }
+        console.error('删除展板失败:', e);
+        this.$message.error('删除展板失败');
       }
     },
 
     openAllBoundPanels() {
-      const boundPanels = this.allPanels.filter(p => p.modelId);
+      const boundPanels = this.allPanels.filter(p => p.modelId || p.deviceId);
       if (boundPanels.length === 0) {
-        this.$message.warning('没有已绑定的展板');
+        this.$message.warning('娌℃湁宸茬粦瀹氱殑灞曟澘');
         return;
       }
       boundPanels.forEach(panel => this.openPanel(panel));
@@ -1683,7 +1965,7 @@ export default {
       });
 
       if (foundModel) {
-        this.boundModels[panel.id] = {
+        this.boundModels[this.getPanelKey(panel)] = {
           name: foundModel.name || panel.modelName,
           object: foundModel,
           screenPosition: this.getScreenPosition(foundModel)
@@ -1693,7 +1975,7 @@ export default {
 
     startBindMode(panelConfig) {
       this.bindMode = true;
-      this.bindingPanelId = panelConfig.id;
+      this.bindingPanelId = this.getPanelKey(panelConfig);
       this.$message.info('请点击场景中的模型进行绑定');
     },
 
@@ -1703,10 +1985,11 @@ export default {
     },
 
     handleUnbindModel(panelId) {
-      if (this.boundModels[panelId]) {
-        delete this.boundModels[panelId];
-      }
       const panel = this.openedPanels.find(p => p.id === panelId);
+      const panelKey = panel ? this.getPanelKey(panel) : String(panelId);
+      if (this.boundModels[panelKey]) {
+        delete this.boundModels[panelKey];
+      }
       if (panel) {
         panel.modelId = null;
         panel.modelName = null;
@@ -1718,32 +2001,140 @@ export default {
     async bindModelToPanel(model) {
       if (!this.bindingPanelId) return;
       
-      const panel = this.openedPanels.find(p => p.id === this.bindingPanelId);
+      const panel = this.openedPanels.find(p => this.getPanelKey(p) === this.bindingPanelId);
       if (!panel) return;
 
       try {
-        await bindModelApi(panel.id, this.getModelStorageId(model), model.name || 'model', 'scene');
-        this.boundModels[panel.id] = {
+        const modelId = this.getModelStorageId(model);
+        const modelName = model.name || 'model';
+        if (this.currentSceneId && typeof panel.id === 'number') {
+          await bindModelApi(panel.id, modelId, modelName, 'scene', this.currentSceneId);
+          await this.refreshPanels();
+        } else {
+          this.handlePatchPanel({
+            panelId: panel.id,
+            changes: {
+              modelId,
+              modelName,
+              modelType: 'scene'
+            }
+          });
+        }
+        this.boundModels[this.getPanelKey(panel)] = {
           name: model.name || '未命名模型',
           object: model,
           screenPosition: this.getScreenPosition(model)
         };
-        await this.refreshPanels();
-        const updatedPanel = this.allPanels.find(p => p.id === panel.id);
+        const updatedPanel = this.allPanels.find(p => this.getPanelKey(p) === this.getPanelKey(panel));
         if (updatedPanel) {
-          const idx = this.openedPanels.findIndex(p => p.id === panel.id);
+          const idx = this.openedPanels.findIndex(p => this.getPanelKey(p) === this.getPanelKey(panel));
           if (idx > -1) {
             this.openedPanels[idx] = updatedPanel;
           }
         }
         this.$message.success(`已绑定到模型: ${model.name || '未命名模型'}`);
       } catch (e) {
-        console.error('绑定模型失败:', e);
-        this.$message.error('绑定模型失败');
+        console.error('缁戝畾妯″瀷澶辫触:', e);
+        this.$message.error('缁戝畾妯″瀷澶辫触');
       }
       
       this.bindMode = false;
       this.bindingPanelId = null;
+    },
+
+    startBindMode(panelConfig) {
+      this.bindMode = true;
+      this.bindingPanelId = this.getPanelKey(panelConfig);
+      this.$message.info('请在场景中点击要绑定的模型');
+    },
+
+    handleUnbindModel(panelId) {
+      const panel = this.allPanels.find(p => this.getPanelKey(p) === String(panelId) || p.id === panelId);
+      const panelKey = panel ? this.getPanelKey(panel) : String(panelId);
+      if (this.boundModels[panelKey]) {
+        delete this.boundModels[panelKey];
+      }
+      if (panel) {
+        this.handlePatchPanel({
+          panelId: panel.id,
+          changes: {
+            modelId: null,
+            modelName: null,
+            modelType: null
+          }
+        });
+      }
+      this.$message.success('模型绑定已解除');
+    },
+
+    async bindModelToPanel(model) {
+      if (!this.bindingPanelId) return;
+
+      const panel = this.allPanels.find(p => this.getPanelKey(p) === this.bindingPanelId);
+      if (!panel) return;
+
+      try {
+        const modelId = this.getModelStorageId(model);
+        const modelName = model.name || 'model';
+        if (this.currentSceneId && typeof panel.id === 'number') {
+          await bindModelApi(panel.id, modelId, modelName, 'scene', this.currentSceneId);
+          await this.refreshPanels();
+        } else {
+          this.handlePatchPanel({
+            panelId: panel.id,
+            changes: {
+              modelId,
+              modelName,
+              modelType: 'scene'
+            }
+          });
+        }
+        this.boundModels[this.getPanelKey(panel)] = {
+          name: model.name || '未命名模型',
+          object: model,
+          screenPosition: this.getScreenPosition(model)
+        };
+        const updatedPanel = this.allPanels.find(p => this.getPanelKey(p) === this.getPanelKey(panel));
+        if (updatedPanel) {
+          const idx = this.openedPanels.findIndex(p => this.getPanelKey(p) === this.getPanelKey(panel));
+          if (idx > -1) {
+            this.openedPanels[idx] = updatedPanel;
+          }
+        }
+        this.$message.success(`已绑定到模型: ${model.name || '未命名模型'}`);
+      } catch (e) {
+        console.error('bind panel model failed:', e);
+        this.$message.error('绑定展板模型失败');
+      }
+
+      this.bindMode = false;
+      this.bindingPanelId = null;
+    },
+
+    async handlePanelModelUnbind(panel) {
+      if (!panel) {
+        return;
+      }
+
+      try {
+        if (this.currentSceneId && typeof panel.id === 'number') {
+          await unbindPanelModelApi(panel.id, this.currentSceneId);
+          await this.refreshPanels();
+        } else {
+          this.handlePatchPanel({
+            panelId: panel.id,
+            changes: {
+              modelId: null,
+              modelName: null,
+              modelType: null
+            }
+          });
+        }
+        this.handleUnbindModel(this.getPanelKey(panel));
+      } catch (error) {
+        console.error('unbind panel model failed:', error);
+        this.$message.error('解除模型绑定失败');
+      }
     },
 
     getScreenPosition(object) {
@@ -1786,7 +2177,7 @@ export default {
           },
           undefined,
           (error) => {
-            console.error('天空盒背景加载失败:', error);
+            console.error('澶╃┖鐩掕儗鏅姞杞藉け璐?', error);
             this.scene.background = new THREE.Color(0x87CEEB);
             this.skyboxEnabled = false;
             this.$message.error('天空背景加载失败，使用默认背景');
@@ -1802,6 +2193,7 @@ export default {
         this.currentSceneId = sceneData.id || id;
         this.currentSceneName = name || '';
         this.currentSceneDescription = description || '';
+        this.resetPanelState({ clearDrafts: true });
 
         this.sceneLoaded = true;
         this.$nextTick(() => {
@@ -1820,6 +2212,7 @@ export default {
                 }
                 this.modelBindings = normalized.bindings || [];
                 await this.loadSceneBindings(id);
+                await this.loadAllPanels(id);
                 this.$message.success('scene loaded successfully');
               });
             this.loadSceneTextures(id);
@@ -1843,6 +2236,7 @@ export default {
                 this.scene.add(model);
                 window.threeScene.scene = this.scene;
                 await this.loadSceneBindings(id);
+                await this.loadAllPanels(id);
                 this.$message.success('scene loaded successfully');
               },
               undefined,
@@ -1866,7 +2260,7 @@ export default {
       return `${url}${separator}t=${Date.now()}`;
     },
     
-    // 加载场景贴图信息
+    // 鍔犺浇鍦烘櫙璐村浘淇℃伅
     async loadSceneTextures(sceneId) {
       try {
         const sceneAsset = await getScene(sceneId);
@@ -1876,6 +2270,10 @@ export default {
           if ((!this.modelBindings || this.modelBindings.length === 0) && metadata.bindings?.length) {
             this.modelBindings = metadata.bindings;
           }
+          if ((!this.allPanels || this.allPanels.length === 0) && metadata.panels?.length) {
+            this.draftPanels = metadata.panels.map((panel, index) => this.normalizeImportedPanel(panel, index));
+            this.allPanels = this.draftPanels.map(panel => this.normalizePanel(panel, this.getPanelKey(panel)));
+          }
           this.applySavedTextures();
         }
       } catch (error) {
@@ -1883,9 +2281,9 @@ export default {
       }
     },
 
-    // 应用已保存的贴图到模型
+    // 搴旂敤宸蹭繚瀛樼殑璐村浘鍒版ā鍨?
     applySavedTextures() {
-      // 遍历场景中的所有模型
+      // 閬嶅巻鍦烘櫙涓殑鎵€鏈夋ā鍨?
       this.scene.traverse((object) => {
         if (object.isGroup && object !== this.helperGroup) {
           const textureData = this.modelTextures.get(this.getModelStorageId(object));
@@ -1896,14 +2294,14 @@ export default {
       });
     },
     
-    // 提供模型数据给组合模型编辑器
+    // 鎻愪緵妯″瀷鏁版嵁缁欑粍鍚堟ā鍨嬬紪杈戝櫒
     provideModelData() {
-      console.log('提供模型数据给组合模型编辑器');
-      // 直接传递当前的模型数据，如果为空则先加载
+      console.log('鎻愪緵妯″瀷鏁版嵁缁欑粍鍚堟ā鍨嬬紪杈戝櫒');
+      // 鐩存帴浼犻€掑綋鍓嶇殑妯″瀷鏁版嵁锛屽鏋滀负绌哄垯鍏堝姞杞?
       if (this.modelData.length === 0) {
         this.loadModelData();
       } else {
-        // 如果数据已经存在，直接传递给组合模型编辑器
+        // 濡傛灉鏁版嵁宸茬粡瀛樺湪锛岀洿鎺ヤ紶閫掔粰缁勫悎妯″瀷缂栬緫鍣?
         if (this.$refs.compositeModelEditor) {
           console.log('直接传递现有模型数据给组合模型编辑器');
           this.$refs.compositeModelEditor.receiveModelData(this.modelData);
@@ -1911,14 +2309,14 @@ export default {
       }
     },
     
-    // 接收模型数据并传递给组合模型编辑器
+    // 鎺ユ敹妯″瀷鏁版嵁骞朵紶閫掔粰缁勫悎妯″瀷缂栬緫鍣?
     receiveModelData(data) {
       if (this.$refs.compositeModelEditor) {
         this.$refs.compositeModelEditor.receiveModelData(data);
       }
     },
     
-    // 获取场景中的模型列表
+    // 鑾峰彇鍦烘櫙涓殑妯″瀷鍒楄〃
     getSceneModels() {
       if (!this.scene) return [];
       
@@ -1949,21 +2347,21 @@ export default {
       return models;
     },
     
-    // 打开组合模型选择器
+    // 鎵撳紑缁勫悎妯″瀷閫夋嫨鍣?
     openCompositeModelSelector() {
       this.isCompositeModelSelectorVisible = true;
     },
     
-    // 打开组合模型编辑器
+    // 鎵撳紑缁勫悎妯″瀷缂栬緫鍣?
     openCompositeModelEditor() {
       this.isCompositeEditorVisible = true;
-      // 使用 $nextTick 确保组件已挂载后再加载数据
+      // 浣跨敤 $nextTick 纭繚缁勪欢宸叉寕杞藉悗鍐嶅姞杞芥暟鎹?
       this.$nextTick(() => {
-        // 确保模型数据已加载
+        // 纭繚妯″瀷鏁版嵁宸插姞杞?
         if (this.modelData.length === 0) {
           this.loadModelData();
         } else {
-          // 如果数据已经存在，直接传递给组合模型编辑器
+          // 濡傛灉鏁版嵁宸茬粡瀛樺湪锛岀洿鎺ヤ紶閫掔粰缁勫悎妯″瀷缂栬緫鍣?
           if (this.$refs.compositeModelEditor) {
             console.log('直接传递现有模型数据给组合模型编辑器');
             this.$refs.compositeModelEditor.receiveModelData(this.modelData);
@@ -1972,24 +2370,24 @@ export default {
       });
     },
     
-    // 加载组合模型
+    // 鍔犺浇缁勫悎妯″瀷
     async loadCompositeModel(compositeModel) {
       try {
-        // 获取组合模型的组件
+        // 鑾峰彇缁勫悎妯″瀷鐨勭粍浠?
         const response = await getCompositeModelComponents(compositeModel.id);
         const components = response.data || response;
         
-        // 加载每个组件对应的模型
+        // 鍔犺浇姣忎釜缁勪欢瀵瑰簲鐨勬ā鍨?
         for (const component of components) {
-          // 这里需要根据component.modelId获取实际的模型信息
-          // 检查modelId是否已经是完整URL，避免重复添加前缀
+          // 杩欓噷闇€瑕佹牴鎹甤omponent.modelId鑾峰彇瀹為檯鐨勬ā鍨嬩俊鎭?
+          // 妫€鏌odelId鏄惁宸茬粡鏄畬鏁碪RL锛岄伩鍏嶉噸澶嶆坊鍔犲墠缂€
           let fileUrl = component.modelId;
           if (fileUrl && !fileUrl.startsWith('http')) {
             fileUrl = getFileUrl(component.modelId);
           }
           
           const modelData = {
-            name: `模型_${component.modelId}`,
+            name: `妯″瀷_${component.modelId}`,
             file: fileUrl,
             position: { 
               x: component.position_x || 0, 
@@ -2009,190 +2407,190 @@ export default {
             boundData: null,
           };
           
-          // 加载模型
+          // 鍔犺浇妯″瀷
           this.loadModel(modelData);
         }
         
         this.$message.success(`组合模型 "${compositeModel.name}" 已加载`);
         this.isCompositeModelSelectorVisible = false;
       } catch (error) {
-        console.error('加载组合模型失败:', error);
-        this.$message.error('加载组合模型失败: ' + (error.message || '未知错误'));
+        console.error('鍔犺浇缁勫悎妯″瀷澶辫触:', error);
+        this.$message.error('鍔犺浇缁勫悎妯″瀷澶辫触: ' + (error.message || '鏈煡閿欒'));
       }
     },
     
-    // 保存组合模型
+    // 淇濆瓨缁勫悎妯″瀷
     async saveCompositeModel(compositeModelData) {
-      // 防止重复提交
+      // 闃叉閲嶅鎻愪氦
       if (this.savingCompositeModel) {
         return;
       }
       
       try {
         this.savingCompositeModel = true;
-        // 调用后端API保存组合模型
+        // 璋冪敤鍚庣API淇濆瓨缁勫悎妯″瀷
         const response = await createCompositeModel(compositeModelData);
-        console.log('保存组合模型到后端:', response);
-        this.$message.success('组合模型保存成功');
+        console.log('淇濆瓨缁勫悎妯″瀷鍒板悗绔?', response);
+        this.$message.success('缁勫悎妯″瀷淇濆瓨鎴愬姛');
         
-        // 关闭编辑器
+        // 鍏抽棴缂栬緫鍣?
         this.isCompositeEditorVisible = false;
       } catch (error) {
-        console.error('保存组合模型失败:', error);
-        this.$message.error('保存失败: ' + (error.message || '未知错误'));
+        console.error('淇濆瓨缁勫悎妯″瀷澶辫触:', error);
+        this.$message.error('淇濆瓨澶辫触: ' + (error.message || '鏈煡閿欒'));
       } finally {
         this.savingCompositeModel = false;
       }
     },
     
     handleApplyTexture(model, textureData) {
-      console.log('处理应用贴图请求:', { 
+      console.log('澶勭悊搴旂敤璐村浘璇锋眰:', { 
         modelId: model.uuid, 
         modelName: model.name,
         textureDataLength: textureData.length,
         textureDataPreview: textureData.substring(0, 100)
       });
       
-      // 临时存储贴图信息
+      // 涓存椂瀛樺偍璐村浘淇℃伅
       this.textureCache.set(this.getModelStorageId(model), textureData);
       
-      // 立即在视图中预览贴图效果
+      // 绔嬪嵆鍦ㄨ鍥句腑棰勮璐村浘鏁堟灉
       this.previewTextureOnModel(model, textureData);
       
-      // 标记场景有变化
+      // 鏍囪鍦烘櫙鏈夊彉鍖?
       this.hasChanges = true;
     },
     
     handleRemoveTexture(model) {
-      console.log('处理移除贴图请求:', { 
+      console.log('澶勭悊绉婚櫎璐村浘璇锋眰:', { 
         modelId: model.uuid, 
         modelName: model.name
       });
       
-      // 移除贴图缓存
+      // 绉婚櫎璐村浘缂撳瓨
       this.textureCache.delete(this.getModelStorageId(model));
       
-      // 移除模型上的贴图
+      // 绉婚櫎妯″瀷涓婄殑璐村浘
       this.removeTextureFromModel(model);
       
-      // 标记场景有变化
+      // 鏍囪鍦烘櫙鏈夊彉鍖?
       this.hasChanges = true;
     },
     
     previewTextureOnModel(model, textureData) {
-      console.log('开始预览贴图:', { 
+      console.log('寮€濮嬮瑙堣创鍥?', { 
         modelId: model.uuid, 
         modelName: model.name,
         textureDataLength: textureData.length,
         textureDataPreview: textureData.substring(0, 100)
       });
       
-      // 创建图像元素用于加载base64数据
+      // 鍒涘缓鍥惧儚鍏冪礌鐢ㄤ簬鍔犺浇base64鏁版嵁
       const image = new Image();
       image.src = textureData;
       
-      // 当图像加载完成后创建贴图
+      // 褰撳浘鍍忓姞杞藉畬鎴愬悗鍒涘缓璐村浘
       image.onload = () => {
         console.log('图像加载完成，开始创建贴图', {
           imageWidth: image.width,
           imageHeight: image.height
         });
         const texture = new THREE.CanvasTexture(image);
-        // 设置纹理的色彩空间为sRGB
+        // 璁剧疆绾圭悊鐨勮壊褰╃┖闂翠负sRGB
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.needsUpdate = true;
         
-        // 设置纹理重复模式，确保贴图正确覆盖整个模型表面
+        // 璁剧疆绾圭悊閲嶅妯″紡锛岀‘淇濊创鍥炬纭鐩栨暣涓ā鍨嬭〃闈?
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(1, 1);
         
-        // 确保纹理过滤方式正确
+        // 纭繚绾圭悊杩囨护鏂瑰紡姝ｇ‘
         texture.magFilter = THREE.LinearFilter;
         texture.minFilter = THREE.LinearFilter;
         
-        // 强制设置UV变换，确保贴图完整覆盖
+        // 寮哄埗璁剧疆UV鍙樻崲锛岀‘淇濊创鍥惧畬鏁磋鐩?
         texture.matrixAutoUpdate = false;
         texture.matrix.setUvTransform(0, 0, 1, 1, 0, 0, 0);
         
-        console.log('创建的贴图:', texture);
+        console.log('鍒涘缓鐨勮创鍥?', texture);
         
-        // 遍历模型的所有网格对象并应用贴图
+        // 閬嶅巻妯″瀷鐨勬墍鏈夌綉鏍煎璞″苟搴旂敤璐村浘
         let meshCount = 0;
         model.traverse((child) => {
           if (child.isMesh) {
             meshCount++;
-            console.log('处理网格对象:', {
+            console.log('澶勭悊缃戞牸瀵硅薄:', {
               name: child.name || child.uuid,
               materialType: child.material.type,
               hasMap: !!child.material.map
             });
             
-            // 确保使用支持贴图的材质类型
+            // 纭繚浣跨敤鏀寔璐村浘鐨勬潗璐ㄧ被鍨?
             let material;
             
-            // 如果当前材质已经是合适的类型，则复用并更新其属性
+            // 濡傛灉褰撳墠鏉愯川宸茬粡鏄悎閫傜殑绫诲瀷锛屽垯澶嶇敤骞舵洿鏂板叾灞炴€?
             if (child.material instanceof THREE.MeshStandardMaterial || 
                 child.material instanceof THREE.MeshPhongMaterial ||
                 child.material instanceof THREE.MeshLambertMaterial) {
               material = child.material.clone();
               material.map = texture;
               
-              // 确保材质属性正确设置以正确显示贴图
+              // 纭繚鏉愯川灞炴€ф纭缃互姝ｇ‘鏄剧ず璐村浘
               material.needsUpdate = true;
               
-              // 清除可能影响贴图显示的属性
-              material.emissive = new THREE.Color(0x000000); // 清除自发光
-              material.emissiveIntensity = 0; // 清除自发光强度
+              // 娓呴櫎鍙兘褰卞搷璐村浘鏄剧ず鐨勫睘鎬?
+              material.emissive = new THREE.Color(0x000000); // 娓呴櫎鑷彂鍏?
+              material.emissiveIntensity = 0; // 娓呴櫎鑷彂鍏夊己搴?
               
-              // 如果是MeshStandardMaterial，设置合适的粗糙度和金属度以更好地显示贴图
+              // 濡傛灉鏄疢eshStandardMaterial锛岃缃悎閫傜殑绮楃硻搴﹀拰閲戝睘搴︿互鏇村ソ鍦版樉绀鸿创鍥?
               if (material instanceof THREE.MeshStandardMaterial) {
-                material.roughness = 0.7; // 中等粗糙度表面更容易看到贴图细节
-                material.metalness = 0.2; // 轻微金属感
+                material.roughness = 0.7; // 涓瓑绮楃硻搴﹁〃闈㈡洿瀹规槗鐪嬪埌璐村浘缁嗚妭
+                material.metalness = 0.2; // 杞诲井閲戝睘鎰?
               }
               
-              // 强制更新UV变换
+              // 寮哄埗鏇存柊UV鍙樻崲
               if (material.map) {
                 material.map.matrixAutoUpdate = false;
                 material.map.matrix.setUvTransform(0, 0, 1, 1, 0, 0, 0);
               }
               
               child.material = material;
-              console.log('更新现有材质贴图');
+              console.log('鏇存柊鐜版湁鏉愯川璐村浘');
             } 
-            // 如果是基础材质或其他类型，创建新的MeshPhongMaterial
+            // 濡傛灉鏄熀纭€鏉愯川鎴栧叾浠栫被鍨嬶紝鍒涘缓鏂扮殑MeshPhongMaterial
             else {
               material = new THREE.MeshPhongMaterial({
                 map: texture,
-                emissive: new THREE.Color(0x000000), // 无自发光
+                emissive: new THREE.Color(0x000000), // 鏃犺嚜鍙戝厜
                 emissiveIntensity: 0,
-                specular: new THREE.Color(0x111111) // 轻微高光
+                specular: new THREE.Color(0x111111) // 杞诲井楂樺厜
               });
               
-              // 保持原始颜色
+              // 淇濇寔鍘熷棰滆壊
               if (child.material.color) {
                 material.color = child.material.color;
               }
               
-              // 强制更新UV变换
+              // 寮哄埗鏇存柊UV鍙樻崲
               if (material.map) {
                 material.map.matrixAutoUpdate = false;
                 material.map.matrix.setUvTransform(0, 0, 1, 1, 0, 0, 0);
               }
               
-              // 替换材质
+              // 鏇挎崲鏉愯川
               child.material = material;
-              console.log('创建新的MeshPhongMaterial');
+              console.log('鍒涘缓鏂扮殑MeshPhongMaterial');
             }
             
-            // 同步更新原始材质备份（如果存在），确保取消选中时也能保留贴图
+            // 鍚屾鏇存柊鍘熷鏉愯川澶囦唤锛堝鏋滃瓨鍦級锛岀‘淇濆彇娑堥€変腑鏃朵篃鑳戒繚鐣欒创鍥?
             if (child.userData.originalMaterial) {
-              // 克隆当前材质作为新的原始材质备份
+              // 鍏嬮殕褰撳墠鏉愯川浣滀负鏂扮殑鍘熷鏉愯川澶囦唤
               child.userData.originalMaterial = child.material.clone();
-              console.log('同步更新原始材质备份');
+              console.log('鍚屾鏇存柊鍘熷鏉愯川澶囦唤');
             }
             
-            console.log('应用贴图后的材质:', {
+            console.log('搴旂敤璐村浘鍚庣殑鏉愯川:', {
               type: child.material.type,
               hasMap: !!child.material.map
             });
@@ -2201,19 +2599,19 @@ export default {
         
         console.log('共处理了', meshCount, '个网格对象');
         
-        // 强制重新渲染场景
+        // 寮哄埗閲嶆柊娓叉煋鍦烘櫙
         if (this.renderer && this.scene && this.camera) {
-          console.log('强制重新渲染场景');
+          console.log('寮哄埗閲嶆柊娓叉煋鍦烘櫙');
           this.renderer.render(this.scene, this.camera);
         }
         
-        // 再次检查贴图是否应用成功
+        // 鍐嶆妫€鏌ヨ创鍥炬槸鍚﹀簲鐢ㄦ垚鍔?
         setTimeout(() => {
-          console.log('延迟检查贴图应用结果:');
+          console.log('寤惰繜妫€鏌ヨ创鍥惧簲鐢ㄧ粨鏋?');
           let appliedCount = 0;
           model.traverse((child) => {
             if (child.isMesh) {
-              console.log('网格对象贴图状态:', {
+              console.log('缃戞牸瀵硅薄璐村浘鐘舵€?', {
                 name: child.name || child.uuid,
                 hasMap: !!child.material.map,
                 mapType: child.material.map ? child.material.map.constructor.name : 'None'
@@ -2222,19 +2620,19 @@ export default {
             }
           });
           
-          // 显示贴图应用成功的提示
+          // 鏄剧ず璐村浘搴旂敤鎴愬姛鐨勬彁绀?
           if (appliedCount > 0) {
             this.$message.success(`贴图已成功应用于 ${appliedCount} 个网格对象`);
           } else {
-            this.$message.warning('贴图应用可能未成功，请检查控制台输出');
+            this.$message.warning('璐村浘搴旂敤鍙兘鏈垚鍔燂紝璇锋鏌ユ帶鍒跺彴杈撳嚭');
           }
         }, 100);
       };
       
-      // 添加错误处理
+      // 娣诲姞閿欒澶勭悊
       image.onerror = (err) => {
-        console.error('贴图加载失败:', err);
-        console.error('贴图数据可能有问题:', textureData.substring(0, 200));
+        console.error('璐村浘鍔犺浇澶辫触:', err);
+        console.error('璐村浘鏁版嵁鍙兘鏈夐棶棰?', textureData.substring(0, 200));
         this.$message.error('贴图加载失败，请检查图片文件');
       };
     },
@@ -2242,33 +2640,33 @@ export default {
     removeTextureFromModel(model) {
       console.log('开始移除贴图');
       
-      // 移除贴图并恢复原始无贴图材质
+      // 绉婚櫎璐村浘骞舵仮澶嶅師濮嬫棤璐村浘鏉愯川
       let restoredCount = 0;
       model.traverse((child) => {
         if (child.isMesh) {
-          console.log('处理网格对象:', {
+          console.log('澶勭悊缃戞牸瀵硅薄:', {
             name: child.name || child.uuid,
             hasOriginalMaterial: !!child.userData.originalMaterial
           });
           
-          // 检查是否存在原始材质备份
+          // 妫€鏌ユ槸鍚﹀瓨鍦ㄥ師濮嬫潗璐ㄥ浠?
           if (child.userData.originalMaterial) {
-            // 恢复原始材质（无贴图的材质）
-            console.log('恢复原始材质');
+            // 鎭㈠鍘熷鏉愯川锛堟棤璐村浘鐨勬潗璐級
+            console.log('鎭㈠鍘熷鏉愯川');
             child.material = child.userData.originalMaterial;
             child.material.needsUpdate = true;
             
-            // 清除材质中的贴图
+            // 娓呴櫎鏉愯川涓殑璐村浘
             if (child.material.map) {
               child.material.map = null;
             }
             
-            // 更新原始材质备份，确保其中不包含贴图
+            // 鏇存柊鍘熷鏉愯川澶囦唤锛岀‘淇濆叾涓笉鍖呭惈璐村浘
             child.userData.originalMaterial = child.material.clone();
             
             restoredCount++;
           } else {
-            // 如果没有原始材质备份，尝试清除贴图
+            // 濡傛灉娌℃湁鍘熷鏉愯川澶囦唤锛屽皾璇曟竻闄よ创鍥?
             console.log('清除当前材质的贴图');
             if (child.material.map) {
               child.material.map = null;
@@ -2277,7 +2675,7 @@ export default {
             }
           }
           
-          // 确保移除所有与贴图相关的属性
+          // 纭繚绉婚櫎鎵€鏈変笌璐村浘鐩稿叧鐨勫睘鎬?
           if (child.material && child.material.map) {
             child.material.map = null;
             child.material.needsUpdate = true;
@@ -2285,23 +2683,23 @@ export default {
         }
       });
       
-      console.log('共恢复了', restoredCount, '个网格对象的材质');
+      console.log('鍏辨仮澶嶄簡', restoredCount, '涓綉鏍煎璞＄殑鏉愯川');
       
-      // 强制重新渲染场景
+      // 寮哄埗閲嶆柊娓叉煋鍦烘櫙
       if (this.renderer && this.scene && this.camera) {
-        console.log('强制重新渲染场景');
+        console.log('寮哄埗閲嶆柊娓叉煋鍦烘櫙');
         this.renderer.render(this.scene, this.camera);
       }
       
-      // 显示成功消息
+      // 鏄剧ず鎴愬姛娑堟伅
       if (restoredCount > 0) {
-        this.$message.success(`已移除 ${restoredCount} 个网格对象的贴图`);
+        this.$message.success(`宸茬Щ闄?${restoredCount} 涓綉鏍煎璞＄殑璐村浘`);
       }
     },
     
-    // 保存场景时调用此方法持久化贴图信息
+    // 淇濆瓨鍦烘櫙鏃惰皟鐢ㄦ鏂规硶鎸佷箙鍖栬创鍥句俊鎭?
     saveSceneTextures(sceneId) {
-      // 将贴图缓存转换为可发送到后端的格式
+      // 灏嗚创鍥剧紦瀛樿浆鎹负鍙彂閫佸埌鍚庣鐨勬牸寮?
       const texturesToSave = [];
       for (let [modelId, textureData] of this.textureCache.entries()) {
         texturesToSave.push({
@@ -2310,11 +2708,11 @@ export default {
         });
       }
       
-      // 如果有贴图信息需要保存，则发送到后端
+      // 濡傛灉鏈夎创鍥句俊鎭渶瑕佷繚瀛橈紝鍒欏彂閫佸埌鍚庣
       if (texturesToSave.length > 0) {
-        // 这里应该调用后端API保存贴图信息
-        // 由于当前后端没有专门的贴图保存接口，我们将贴图信息保存到场景资产中
-        console.log("需要保存的贴图信息:", texturesToSave);
+        // 杩欓噷搴旇璋冪敤鍚庣API淇濆瓨璐村浘淇℃伅
+        // 鐢变簬褰撳墠鍚庣娌℃湁涓撻棬鐨勮创鍥句繚瀛樻帴鍙ｏ紝鎴戜滑灏嗚创鍥句俊鎭繚瀛樺埌鍦烘櫙璧勪骇涓?
+        console.log("闇€瑕佷繚瀛樼殑璐村浘淇℃伅:", texturesToSave);
         return texturesToSave;
       }
       
@@ -2331,7 +2729,7 @@ export default {
   background: #ffffff;
   overflow: hidden;
 }
-/* 工具栏样式 - 两侧布局 */
+/* 宸ュ叿鏍忔牱寮?- 涓や晶甯冨眬 */
 .toolbar {
   position: absolute;
   top: 5px;
@@ -2400,7 +2798,7 @@ export default {
   z-index: 1001;
 }
 
-/* 主内容区域 - 全屏显示 */
+/* 涓诲唴瀹瑰尯鍩?- 鍏ㄥ睆鏄剧ず */
 .main-content {
   position: absolute;
   top: 0;
@@ -2411,11 +2809,11 @@ export default {
 }
 
 .main-content.with-toolbar {
-  top: 70px; /* 为工具栏留出空间 */
+  top: 70px; /* 涓哄伐鍏锋爮鐣欏嚭绌洪棿 */
   height: calc(100% - 64px);
 }
 
-/* 初始场景选择界面 */
+/* 鍒濆鍦烘櫙閫夋嫨鐣岄潰 */
 .scene-options {
   position: absolute;
   top: 50%;
@@ -2444,21 +2842,21 @@ export default {
   align-items: center;
 }
 
-/* 3D场景容器 - 全屏 */
+/* 3D鍦烘櫙瀹瑰櫒 - 鍏ㄥ睆 */
 .scene-container {
   width: 100%;
   height: 100%;
   position: relative;
-  min-height: 400px; /* 添加最小高度确保有尺寸 */
+  min-height: 400px; /* 娣诲姞鏈€灏忛珮搴︾‘淇濇湁灏哄 */
 }
 
-/* 闸站场景容器 - 全屏 */
+/* 闂哥珯鍦烘櫙瀹瑰櫒 - 鍏ㄥ睆 */
 .gate-station-container {
   width: 100%;
   height: 100%;
   position: relative;
   background: white;
-  min-height: 400px; /* 添加最小高度确保有尺寸 */
+  min-height: 400px; /* 娣诲姞鏈€灏忛珮搴︾‘淇濇湁灏哄 */
 }
 
 .gate-station-iframe {
@@ -2468,7 +2866,7 @@ export default {
   background: white;
 }
 
-/* 加载状态指示 */
+/* 鍔犺浇鐘舵€佹寚绀?*/
 .gate-station-loading {
   position: absolute;
   top: 50%;
@@ -2484,10 +2882,10 @@ export default {
   margin-bottom: 10px;
 }
 
-/* 操作提示样式 */
+/* 鎿嶄綔鎻愮ず鏍峰紡 */
 .operation-tips {
   position: absolute;
-  top: 74px; /* 在工具栏下方 */
+  top: 74px; /* 鍦ㄥ伐鍏锋爮涓嬫柟 */
   right: 10px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -2517,7 +2915,7 @@ export default {
 .tips-content strong {
   color: #409eff;
 }
-/* 帮助按钮样式 */
+/* 甯姪鎸夐挳鏍峰紡 */
 .help-button {
   position: absolute;
   bottom: 15px;
@@ -2540,7 +2938,7 @@ export default {
   transform: scale(1.1);
 }
 
-/* 动画效果 */
+/* 鍔ㄧ敾鏁堟灉 */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -2552,7 +2950,7 @@ export default {
   }
 }
 
-/* 响应式设计 */
+/* 鍝嶅簲寮忚璁?*/
 @media (max-width: 1024px) {
   .toolbar {
     padding: 6px 12px;

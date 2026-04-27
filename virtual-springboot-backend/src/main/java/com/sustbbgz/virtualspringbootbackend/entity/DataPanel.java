@@ -45,6 +45,8 @@ public class DataPanel {
 
     private Long userId;
 
+    private Long sceneId;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

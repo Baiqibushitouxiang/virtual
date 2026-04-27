@@ -4,6 +4,7 @@ import com.sustbbgz.virtualspringbootbackend.entity.AlertRule;
 import com.sustbbgz.virtualspringbootbackend.entity.Device;
 import com.sustbbgz.virtualspringbootbackend.mapper.AlertRuleMapper;
 import com.sustbbgz.virtualspringbootbackend.service.notifier.AlertNotifier;
+import com.sustbbgz.virtualspringbootbackend.websocket.DataPushService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +42,9 @@ class AlertRuleServiceTest {
     private DeviceService deviceService;
 
     @Mock
+    private DataPushService dataPushService;
+
+    @Mock
     private AlertNotifier alertNotifier;
 
     @Mock
@@ -50,6 +54,7 @@ class AlertRuleServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(alertRuleService, "baseMapper", alertRuleMapper);
         ReflectionTestUtils.setField(alertRuleService, "deviceService", deviceService);
+        ReflectionTestUtils.setField(alertRuleService, "dataPushService", dataPushService);
         ReflectionTestUtils.setField(alertRuleService, "alertNotifiers", Collections.singletonList(alertNotifier));
     }
 
@@ -82,7 +87,7 @@ class AlertRuleServiceTest {
     }
 
     @Test
-    void shouldTriggerNotificationWhenRuleMatches() {
+    void shouldTriggerNotificationAndPushAlertWhenRuleMatches() {
         AlertRule rule = new AlertRule();
         rule.setId(1L);
         rule.setDeviceCode("DEV-001");
@@ -97,6 +102,7 @@ class AlertRuleServiceTest {
         alertRuleService.evaluateRules("DEV-001", "temperature", 82.0);
 
         verify(alertNotifier).notify(eq(rule), eq(82.0), any(String.class));
+        verify(dataPushService).pushAlert(eq("DEV-001"), eq("warning"), any(String.class));
         verify(alertRuleService).updateById(rule);
     }
 
@@ -115,6 +121,7 @@ class AlertRuleServiceTest {
         alertRuleService.evaluateRules("DEV-001", "temperature", 90.0);
 
         verify(alertNotifier, never()).notify(any(), any(), any());
+        verify(dataPushService, never()).pushAlert(any(), any(), any());
         verify(alertRuleService, never()).updateById(any(AlertRule.class));
     }
 
@@ -127,7 +134,7 @@ class AlertRuleServiceTest {
         rule.setDataType("temperature");
         rule.setOperator(">=");
         rule.setThreshold(80.0);
-        rule.setMessageTemplate("${deviceName}-${dataType}-${value}-${operator}-${threshold}");
+        rule.setMessageTemplate("${deviceName}-${dataTypeLabel}-${value}-${operatorLabel}-${threshold}");
         when(alertRuleMapper.findEnabledRules("DEV-001", "temperature")).thenReturn(Collections.singletonList(rule));
         doReturn(true).when(alertRuleService).updateById(any(AlertRule.class));
 
@@ -135,13 +142,32 @@ class AlertRuleServiceTest {
 
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
         verify(alertNotifier).notify(eq(rule), eq(88.0), messageCaptor.capture());
-        assertEquals("main-device-temperature-88.0->=-80.0", messageCaptor.getValue());
+        assertEquals("main-device-温度-88.0-大于等于-80.0", messageCaptor.getValue());
+    }
+
+    @Test
+    void shouldUseChineseDefaultMessageWhenTemplateMissing() {
+        AlertRule rule = new AlertRule();
+        rule.setId(4L);
+        rule.setDeviceCode("DEV-001");
+        rule.setDeviceName("温度传感器-1号");
+        rule.setDataType("temperature");
+        rule.setOperator(">");
+        rule.setThreshold(1.0);
+        when(alertRuleMapper.findEnabledRules("DEV-001", "temperature")).thenReturn(Collections.singletonList(rule));
+        doReturn(true).when(alertRuleService).updateById(any(AlertRule.class));
+
+        alertRuleService.evaluateRules("DEV-001", "temperature", 23.75);
+
+        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertNotifier).notify(eq(rule), eq(23.75), messageCaptor.capture());
+        assertEquals("设备 温度传感器-1号 (DEV-001) 的温度当前值 23.75，触发条件 > 1.0", messageCaptor.getValue());
     }
 
     @Test
     void shouldSupportLessThanComparison() {
         AlertRule rule = new AlertRule();
-        rule.setId(4L);
+        rule.setId(5L);
         rule.setDeviceCode("DEV-001");
         rule.setDataType("temperature");
         rule.setOperator("<");
@@ -164,7 +190,7 @@ class AlertRuleServiceTest {
     @Test
     void shouldContinueWhenOneNotifierFails() {
         AlertRule rule = new AlertRule();
-        rule.setId(5L);
+        rule.setId(6L);
         rule.setDeviceCode("DEV-001");
         rule.setDataType("temperature");
         rule.setOperator(">=");
@@ -177,6 +203,7 @@ class AlertRuleServiceTest {
         assertDoesNotThrow(() -> alertRuleService.evaluateRules("DEV-001", "temperature", 90.0));
 
         verify(secondaryAlertNotifier).notify(eq(rule), eq(90.0), any(String.class));
+        verify(dataPushService).pushAlert(eq("DEV-001"), eq("warning"), any(String.class));
         verify(alertRuleService).updateById(rule);
     }
 }

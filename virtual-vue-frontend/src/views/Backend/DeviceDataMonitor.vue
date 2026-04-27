@@ -4,7 +4,7 @@
       <div class="backend-page__hero-copy">
         <p class="backend-page__eyebrow">后台管理</p>
         <h1 class="backend-page__title">实时数据监控</h1>
-        <p class="backend-page__subtitle">通过 WebSocket 观察实时上报数据，支持搜索与本地分页。</p>
+        <p class="backend-page__subtitle">通过 WebSocket 观察实时上报数据、告警和通知消息，支持搜索与本地分页。</p>
       </div>
       <div class="backend-page__stats">
         <div class="backend-page__stat">
@@ -23,7 +23,7 @@
         <div class="backend-page__card-header">
           <div>
             <h2 class="backend-page__section-title">消息列表</h2>
-            <p class="backend-page__section-desc">可查看设备编码、接收时间和原始数据内容。</p>
+            <p class="backend-page__section-desc">可查看设备编码、消息类型、接收时间和格式化后的消息内容。</p>
           </div>
           <div class="backend-page__actions">
             <el-input v-model="searchText" clearable placeholder="搜索消息" style="width: 220px" @input="resetPage" />
@@ -36,8 +36,9 @@
 
       <el-table :data="pagedItems" stripe>
         <el-table-column prop="deviceId" label="设备编码" width="160" />
+        <el-table-column prop="messageTypeLabel" label="消息类型" width="120" />
         <el-table-column prop="formattedTime" label="接收时间" width="180" />
-        <el-table-column prop="data" label="数据内容" min-width="260" show-overflow-tooltip />
+        <el-table-column prop="formattedData" label="消息内容" min-width="320" show-overflow-tooltip />
       </el-table>
 
       <div class="backend-page__pagination">
@@ -58,6 +59,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { API_CONFIG } from '@/config/apiConfig'
 import { useLocalPagination } from '@/composables/useLocalPagination'
+import { formatMessageContent, formatMessageTypeLabel } from '@/utils/deviceMessage'
 
 const isConnected = ref(false)
 const deviceDataList = ref([])
@@ -84,16 +86,20 @@ const formatTime = (timestamp) => {
 
 const filteredItems = computed(() => {
   const keyword = searchText.value.trim().toLowerCase()
-  if (!keyword) return deviceDataList.value
+  if (!keyword) {
+    return deviceDataList.value
+  }
   return deviceDataList.value.filter((item) =>
-    [item.deviceId, item.data].filter(Boolean).join(' ').toLowerCase().includes(keyword)
+    [item.deviceId, item.messageTypeLabel, item.formattedData].filter(Boolean).join(' ').toLowerCase().includes(keyword)
   )
 })
 
 const { currentPage, pageSize, pageSizes, total, pagedItems, resetPage } = useLocalPagination(filteredItems, { pageSize: 10 })
 
 const connect = () => {
-  if (ws.value) ws.value.close()
+  if (ws.value) {
+    ws.value.close()
+  }
   ws.value = new WebSocket(getWebSocketUrl())
 
   ws.value.onopen = () => {
@@ -104,8 +110,10 @@ const connect = () => {
     try {
       const data = JSON.parse(event.data)
       deviceDataList.value.unshift({
-        deviceId: data.deviceId,
-        data: data.data,
+        deviceId: data.deviceId || '--',
+        type: data.type || '',
+        messageTypeLabel: formatMessageTypeLabel(data.type),
+        formattedData: formatMessageContent(data),
         timestamp: data.timestamp,
         formattedTime: formatTime(data.timestamp)
       })
