@@ -88,6 +88,14 @@ public class  ModelController {
             result.put("url", fileUrl);
             result.put("relativePath", relativePath);
             result.put("fileName", fileName);
+
+            Model model = new Model();
+            model.setCategory(category);
+            model.setName(fileName);
+            model.setFilePath(relativePath);
+            model.setDescription("上传导入的模型：" + fileName);
+            modelService.save(model);
+            result.put("modelId", model.getId());
             return ResponseEntity.ok(result);
         } catch (IOException ex) {
             ex.printStackTrace();

@@ -103,7 +103,7 @@ class WeComWebhookAlertNotifierTest {
     private WeComWebhookProperties createProperties() {
         WeComWebhookProperties properties = new WeComWebhookProperties();
         properties.setEnabled(true);
-        properties.setWebhookUrl("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-key");
+        properties.setWebhookUrl("https://example.com/wecom-webhook");
         return properties;
     }
 

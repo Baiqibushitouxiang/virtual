@@ -15,7 +15,7 @@ try:
 except ImportError:
     OPCUA_AVAILABLE = False
     print("警告: 未安装 opcua-asyncio 库")
-    print("请运行: pip install opcua-asyncio")
+    print("请运行: pip install opcua")
 
 
 class OPCUADeviceClient:
@@ -347,7 +347,7 @@ async def run_opcua_device():
                     if count % 10 == 0:
                         await client.update_status(f"在线 - 已发送 {count} 条数据")
                     
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(20)
                 
                 if not client.connected:
                     print("\n连接已断开，准备重连...")

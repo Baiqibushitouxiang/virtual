@@ -7,8 +7,8 @@
         @model-selected="handleModelSelection"
         @close="isModelSelectorVisible = false"
     />
-    
-    <!-- 缁勫悎妯″瀷閫夋嫨鍣?-->
+
+    <!-- 组合模型选择器 -->
     <CompositeModelSelector
         ref="compositeModelSelector"
         v-if="isCompositeModelSelectorVisible"
@@ -16,8 +16,8 @@
         @load-composite-model="loadCompositeModel"
         @close="isCompositeModelSelectorVisible = false"
     />
-    
-    <!-- 缁勫悎妯″瀷缂栬緫鍣?-->
+
+    <!-- 组合模型编辑器 -->
     <CompositeModelEditor
         ref="compositeModelEditor"
         v-if="isCompositeEditorVisible"
@@ -28,34 +28,34 @@
         @close="isCompositeEditorVisible = false"
     />
 
-    <!-- 宸ュ叿鏍?- 涓や晶甯冨眬 -->
+    <!-- 工具栏 - 两侧布局 -->
     <div v-if="sceneLoaded || showGateStation" class="toolbar">
       <div class="toolbar-left">
         <el-button type="warning" @click="goHome" size="small" title="返回主界面"><i class="fas fa-arrow-left"></i></el-button>
         <el-button-group v-if="sceneLoaded && !showGateStation">
           <el-button type="primary" @click="showModelSelector" :loading="loading" size="small">
-            <i class="el-icon-plus"></i> 閫夋嫨妯″瀷
+            <i class="el-icon-plus"></i> 选择模型
           </el-button>
           <el-button type="success" @click="saveScene" :disabled="!hasChanges" size="small">
-            <i class="el-icon-download"></i> 淇濆瓨鍦烘櫙
+            <i class="el-icon-download"></i> 保存场景
           </el-button>
         </el-button-group>
       </div>
 
       <div class="toolbar-center" v-if="sceneLoaded && !showGateStation">
         <el-button-group>
-          <el-button @click="undo" :disabled="currentHistoryIndex < 0" size="small" title="鎾ら攢 (Ctrl+Z)">
-            <i class="el-icon-refresh-left"></i> 鎾ら攢
+          <el-button @click="undo" :disabled="currentHistoryIndex < 0" size="small" title="撤销 (Ctrl+Z)">
+            <i class="el-icon-refresh-left"></i> 撤销
           </el-button>
           <el-button @click="redo" size="small" title="清除场景中的模型">
-            <i class="el-icon-delete"></i> 娓呴櫎鍦烘櫙
+            <i class="el-icon-delete"></i> 清除场景
           </el-button>
-          <!-- 缁勫悎妯″瀷鎸夐挳 -->
-          <el-button @click="openCompositeModelSelector" size="small" title="浣跨敤缁勫悎妯″瀷">
-            <i class="el-icon-folder-opened"></i> 浣跨敤缁勫悎
+          <!-- 组合模型按钮 -->
+          <el-button @click="openCompositeModelSelector" size="small" title="使用组合模型">
+            <i class="el-icon-folder-opened"></i> 使用组合
           </el-button>
-          <el-button @click="openCompositeModelEditor" size="small" title="鍒涘缓缁勫悎妯″瀷">
-            <i class="el-icon-folder-add"></i> 鍒涘缓缁勫悎
+          <el-button @click="openCompositeModelEditor" size="small" title="创建组合模型">
+            <i class="el-icon-folder-add"></i> 创建组合
           </el-button>
         </el-button-group>
       </div>
@@ -66,72 +66,71 @@
               @click="toggleSkybox"
               :type="skyboxEnabled ? 'success' : 'default'"
               size="small"
-              title="鍒囨崲澶╃┖鑳屾櫙"
+              title="切换天空背景"
           >
             <i class="el-icon-sunny"></i> {{ skyboxEnabled ? '关闭天空' : '开启天空' }}
           </el-button>
-          <el-button @click="toggleDataPanelManager" size="small" title="鏁版嵁灞曟澘绠＄悊">
-            <i class="el-icon-data-line"></i> 鏁版嵁灞曟澘
+          <el-button @click="toggleDataPanelManager" size="small" title="数据展板管理">
+            <i class="el-icon-data-line"></i> 数据展板
           </el-button>
-          <el-button @click="openAllBoundPanels" size="small" title="鎵撳紑鎵€鏈夊凡缁戝畾灞曟澘" :disabled="boundPanelsCount === 0">
-            <i class="el-icon-video-play"></i> 鎵撳紑鍏ㄩ儴
+          <el-button @click="openAllBoundPanels" size="small" title="打开所有已绑定展板" :disabled="boundPanelsCount === 0">
+            <i class="el-icon-video-play"></i> 打开全部
           </el-button>
-          <el-button @click="exportSceneToGLB" size="small" title="瀵煎嚭涓篏LB鏍煎紡">
-            <i class="el-icon-download"></i> 瀵煎嚭GLB
+          <el-button @click="exportSceneToGLB" size="small" title="导出为 GLB 格式">
+            <i class="el-icon-download"></i> 导出GLB
           </el-button>
-          <el-button @click="exportSceneToJSON" size="small" title="瀵煎嚭涓篔SON鏍煎紡">
-            <i class="el-icon-document"></i> 瀵煎嚭JSON
+          <el-button @click="exportSceneToJSON" size="small" title="导出为 JSON 格式">
+            <i class="el-icon-document"></i> 导出JSON
           </el-button>
         </el-button-group>
 
-        <!-- 闂哥珯鍦烘櫙涓撶敤鎸夐挳 -->
+        <!-- 闸站场景专用按钮 -->
         <el-button-group v-if="showGateStation">
-          <el-button @click="refreshGateStation" size="small" title="鍒锋柊闂哥珯鍦烘櫙">
-            <i class="el-icon-refresh"></i> 鍒锋柊
+          <el-button @click="refreshGateStation" size="small" title="刷新闸站场景">
+            <i class="el-icon-refresh"></i> 刷新
           </el-button>
-          <el-button @click="openGateStationInNewTab" size="small" title="鍦ㄦ柊鏍囩椤垫墦寮€">
-            <i class="el-icon-top-right"></i> 鏂版爣绛鹃〉
+          <el-button @click="openGateStationInNewTab" size="small" title="在新标签页打开">
+            <i class="el-icon-top-right"></i> 新标签页
           </el-button>
         </el-button-group>
       </div>
 
-      <!-- 鍔犺浇杩涘害鏉?-->
+      <!-- 加载进度条 -->
       <el-progress v-if="loading" :percentage="loadingProgress" :show-text="false" class="loading-progress" />
     </div>
 
-    <!-- 涓诲唴瀹瑰尯鍩?-->
+    <!-- 主内容区域 -->
     <div class="main-content" :class="{ 'with-toolbar': sceneLoaded || showGateStation }">
-      <!-- 鍒濆鍦烘櫙閫夋嫨鐣岄潰 -->
+      <!-- 初始场景选择界面 -->
       <div v-if="!sceneLoaded && !showGateStation" class="scene-options">
         <h2>数字孪生场景编辑器</h2>
         <div class="scene-buttons">
           <el-button type="primary" @click="createNewScene" size="large">
-            <i class="el-icon-plus"></i> 鍒涘缓鏂板満鏅?
-          </el-button>
+            <i class="el-icon-plus"></i> 新建场景          </el-button>
           <el-button @click="$router.push({ name: 'SceneGallery' })" size="large">
-            <i class="el-icon-folder-opened"></i> 璇诲彇鍦烘櫙
+            <i class="el-icon-folder-opened"></i> 读取场景
           </el-button>
           <el-button @click="importScene" size="large">
-            <i class="el-icon-upload"></i> 瀵煎叆鍦烘櫙
+            <i class="el-icon-upload"></i> 导入场景
           </el-button>
           <el-button @click="openGateStationInterface" size="large">
-            <i class="el-icon-office-building"></i> 闂哥珯鍦烘櫙
+            <i class="el-icon-office-building"></i> 闸站场景
           </el-button>
         </div>
       </div>
 
-      <!-- 3D鍦烘櫙瀹瑰櫒 -->
+      <!-- 3D场景容器 -->
       <div v-if="sceneLoaded && !showGateStation" class="scene-container" id="scene-container">
-        <!-- Three.js鍦烘櫙灏嗘覆鏌撳埌杩欓噷 -->
+        <!-- Three.js 场景将渲染到这里 -->
       </div>
 
-      <!-- 闂哥珯鍦烘櫙瀹瑰櫒 -->
+      <!-- 闸站场景容器 -->
       <div v-if="showGateStation" class="gate-station-container">
         <div v-if="gateStationLoading" class="gate-station-loading">
           <el-icon class="is-loading">
             <Loading />
           </el-icon>
-          <p>闂哥珯鍦烘櫙鍔犺浇涓?..</p>
+          <p>闸站场景加载中...</p>
         </div>
         <iframe
             ref="gateStationIframe"
@@ -141,7 +140,7 @@
         ></iframe>
       </div>
 
-      <!-- ObjectInfo 闈㈡澘 -->
+      <!-- ObjectInfo 面板 -->
       <ObjectInfo
           v-if="selectedModel && sceneLoaded && !showGateStation"
           :selectedModel="selectedModel"
@@ -155,7 +154,7 @@
           @remove-texture="handleRemoveTexture"
       />
 
-      <!-- WebSocket鏁版嵁鐩戞帶闈㈡澘 - 澶氬睍鏉挎敮鎸?-->
+      <!-- WebSocket 数据监控面板 - 多展板支持 -->
       <DeviceDataPanel
           v-for="panel in openedPanels"
           :key="getPanelKey(panel)"
@@ -171,7 +170,7 @@
           @patchPanel="handlePatchPanel"
       />
 
-      <!-- 灞曟澘绠＄悊寮圭獥 -->
+      <!-- 展板管理弹窗 -->
       <DataPanelManager
           v-model:visible="showPanelManager"
           :sceneId="currentSceneId"
@@ -190,45 +189,44 @@
           @unbindDevice="handlePanelDeviceUnbind"
       />
 
-      <!-- 鎿嶄綔鎻愮ず -->
+      <!-- 操作提示 -->
       <div v-if="showTips && sceneLoaded && !showGateStation" class="operation-tips">
         <div class="tips-content">
-          <h4>鎿嶄綔鎻愮ず</h4>
+          <h4>操作提示</h4>
           <ul>
-            <li><strong>Ctrl+Z:</strong> 鎾ら攢鎿嶄綔</li>
-            <li><strong>Delete:</strong> 鍒犻櫎閫変腑妯″瀷</li>
-            <li><strong>榧犳爣宸﹂敭:</strong> 閫夋嫨妯″瀷</li>
-            <li><strong>榧犳爣鍙抽敭:</strong> 鏃嬭浆瑙嗚</li>
-            <li><strong>婊氳疆:</strong> 缂╂斁瑙嗚</li>
-            <li><strong>澶╃┖鑳屾櫙:</strong> 鐐瑰嚮宸ュ叿鏍忎腑鐨?寮€鍚ぉ绌?鎸夐挳娣诲姞澶╃┖鑳屾櫙</li>
+            <li><strong>Ctrl+Z:</strong> 撤销操作</li>
+            <li><strong>Delete:</strong> 删除选中模型</li>
+            <li><strong>鼠标左键:</strong> 选择模型</li>
+            <li><strong>鼠标右键:</strong> 旋转视角</li>
+            <li><strong>滚轮:</strong> 缩放视角</li>
+            <li><strong>天空背景:</strong> 点击工具栏中的"开启天空"按钮添加天空背景</li>
           </ul>
           <el-button @click="showTips = false" size="small" type="text">
-            鐭ラ亾浜?
-          </el-button>
+            知道了          </el-button>
         </div>
       </div>
 
-      <!-- 甯姪鎸夐挳 -->
+      <!-- 帮助按钮 -->
       <el-button
           v-if="sceneLoaded && !showGateStation"
           class="help-button"
           type="text"
           @click="showTips = !showTips"
-          title="鏄剧ず鎿嶄綔甯姪"
+          title="显示操作帮助"
       >
         <i class="el-icon-question"></i>
       </el-button>
     </div>
 
-    <!-- 淇濆瓨鍦烘櫙瀵硅瘽妗?-->
+    <!-- 保存场景对话框 -->
     <el-dialog
-        title="淇濆瓨鍦烘櫙"
+        title="保存场景"
         v-model="saveDialogVisible"
         width="400px"
         :before-close="handleSaveDialogClose"
     >
       <el-form :model="saveForm" label-width="80px">
-        <el-form-item label="鍦烘櫙鍚嶇О" required>
+        <el-form-item label="场景名称" required>
           <el-input
               v-model="saveForm.name"
               placeholder="请输入场景名称"
@@ -236,12 +234,12 @@
               show-word-limit
           />
         </el-form-item>
-        <el-form-item label="鍦烘櫙鎻忚堪">
+        <el-form-item label="场景描述">
           <el-input
               v-model="saveForm.description"
               type="textarea"
               :rows="3"
-              placeholder="璇疯緭鍏ュ満鏅弿杩帮紙鍙€夛級"
+              placeholder="请输入场景描述（可选）"
               maxlength="200"
               show-word-limit
           />
@@ -249,15 +247,14 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="saveDialogVisible = false">鍙栨秷</el-button>
+        <el-button @click="saveDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="confirmSaveScene" :loading="saveLoading">
-          淇濆瓨
+          保存
         </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
-
 <script>
 import { createCompositeModel, getCompositeModelComponents, getModelMenu, getFileUrl, getModelStaticUrl, getModelPathUrl, getScenePathUrl, getGateStationUrl } from "@/api/index.js";
 import { uploadScene, saveSceneTextures, getScene } from '@/api/scenes';
@@ -321,17 +318,17 @@ export default {
         name: '',
         description: ''
       },
-      // 闂哥珯鍦烘櫙鐩稿叧鏁版嵁
+      // 闸站场景相关数据
       showGateStation: false,
       gateStationLoading: false,
       animateId: null,
-      // 闃叉缁勫悎妯″瀷閲嶅淇濆瓨
+      // 防止组合模型重复保存
       savingCompositeModel: false,
       saveCompositeModelTimeout: null,
-      // 璐村浘鐩稿叧鏁版嵁
-      modelTextures: new Map(), // 瀛樺偍妯″瀷璐村浘淇℃伅
-      textureCache: new Map(), // 涓存椂璐村浘缂撳瓨
-      // 鏁版嵁鐩戞帶闈㈡澘 - 澶氬睍鏉挎敮鎸?
+      // 贴图相关数据
+      modelTextures: new Map(), // 存储模型贴图信息
+      textureCache: new Map(), // 临时贴图缓存
+      // 数据监控面板 - 多展板支持
       showPanelManager: false,
       openedPanels: [],
       allPanels: [],
@@ -626,7 +623,7 @@ export default {
           return {
             id: model.id || model.uuid || model.sceneModelId || `imported-model-${index}`,
             uuid: model.uuid || model.id || model.sceneModelId || `imported-model-${index}`,
-            name: model.name || `妯″瀷_${index + 1}`,
+            name: model.name || `模型_${index + 1}`,
             file,
             position: model.position || { x: 0, y: 0, z: 0 },
             rotation: model.rotation || { x: 0, y: 0, z: 0 },
@@ -703,16 +700,16 @@ export default {
         panels: this.allPanels.map(panel => this.normalizePanelForExport(panel))
       };
     },
-    // 娣诲姞娴嬭瘯璐村浘鍔熻兘鐨勬柟娉?
+    // 添加测试贴图功能的方法
     testTextureApplication() {
-      console.log('=== 娴嬭瘯璐村浘鍔熻兘 ===');
+      console.log('=== 测试贴图功能 ===');
       if (!this.selectedModel) {
         console.log('没有选中的模型');
         this.$message.warning('请先选择一个模型');
         return;
       }
       
-      console.log('閫変腑鐨勬ā鍨?', this.selectedModel);
+      console.log('选中的模型', this.selectedModel);
       
       // 鍒涘缓涓€涓槑鏄剧殑娴嬭瘯璐村浘
       const canvas = document.createElement('canvas');
@@ -720,42 +717,42 @@ export default {
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
       
-      // 鍒涘缓闈炲父鏄庢樉鐨勫浘妗?- 鍥涗釜澶ц壊鍧?
-      ctx.fillStyle = '#FF0000'; // 绾㈣壊
+      // 创建非常明显的图案 - 四个大色块
+      ctx.fillStyle = '#FF0000'; // 红色
       ctx.fillRect(0, 0, 128, 128);
       
-      ctx.fillStyle = '#00FF00'; // 缁胯壊
+      ctx.fillStyle = '#00FF00'; // 绿色
       ctx.fillRect(128, 0, 128, 128);
       
-      ctx.fillStyle = '#0000FF'; // 钃濊壊
+      ctx.fillStyle = '#0000FF'; // 蓝色
       ctx.fillRect(0, 128, 128, 128);
       
-      ctx.fillStyle = '#FFFF00'; // 榛勮壊
+      ctx.fillStyle = '#FFFF00'; // 黄色
       ctx.fillRect(128, 128, 128, 128);
       
-      // 娣诲姞绮椾綋鏂囧瓧鏍囪瘑
+      // 添加粗体文字标识
       ctx.font = 'bold 30px Arial';
       ctx.fillStyle = '#000000';
       ctx.textAlign = 'center';
       ctx.fillText('TEST', 128, 140);
       
       const dataUrl = canvas.toDataURL();
-      console.log('鐢熸垚娴嬭瘯璐村浘鏁版嵁:', dataUrl.substring(0, 100));
+      console.log('生成测试贴图数据:', dataUrl.substring(0, 100));
       
       this.previewTextureOnModel(this.selectedModel, dataUrl);
       this.$message.info("测试贴图已应用，请观察模型变化");
     },
     
-    // 娴嬭瘯绉婚櫎璐村浘鍔熻兘
+    // 测试移除贴图功能
     testRemoveTexture() {
-      console.log('=== 娴嬭瘯绉婚櫎璐村浘鍔熻兘 ===');
+      console.log('=== 测试移除贴图功能 ===');
       if (!this.selectedModel) {
         console.log('没有选中的模型');
         this.$message.warning('请先选择一个模型');
         return;
       }
       
-      console.log('閫変腑鐨勬ā鍨?', this.selectedModel);
+      console.log('选中的模型', this.selectedModel);
       this.removeTextureFromModel(this.selectedModel);
       this.$message.info("测试移除贴图已完成");
     },
@@ -770,16 +767,16 @@ export default {
         this.initScene();
       });
     },
-    // 娣诲姞闃叉姈鐨勭獥鍙ｈ皟鏁村ぇ灏忓鐞?
+    // 添加防抖的窗口调整大小处理
     debouncedResize: null,
     
     onWindowResize() {
-      // 娓呴櫎涔嬪墠鐨勯槻鎶栧畾鏃跺櫒
+      // 清除之前的防抖定时器
       if (this.debouncedResize) {
         clearTimeout(this.debouncedResize);
       }
       
-      // 璁剧疆鏂扮殑闃叉姈瀹氭椂鍣?
+      // 设置新的防抖定时器
       this.debouncedResize = setTimeout(() => {
         this.handleResize();
       }, 100);
@@ -932,7 +929,7 @@ export default {
       try {
         const response = await fetch(`/scenes/${sceneName}.json`);
         if (!response.ok) {
-          throw new Error('鏃犳硶鍔犺浇鍦烘櫙鏂囦欢');
+          throw new Error('无法加载场景文件');
         }
         const sceneData = await response.json();
 
@@ -946,11 +943,11 @@ export default {
             this.setSkyboxBackground();
           }
 
-          console.log(`鍦烘櫙 ${sceneName} 鍔犺浇鎴愬姛`);
+          console.log(`场景 ${sceneName} 加载成功`);
         });
       } catch (error) {
-        console.error('鍔犺浇鍦烘櫙澶辫触:', error);
-        this.$message.error(`鍔犺浇鍦烘櫙澶辫触: ${error.message}`);
+        console.error('加载场景失败:', error);
+        this.$message.error(`加载场景失败: ${error.message}`);
       }
     },
 
@@ -974,7 +971,7 @@ export default {
       try {
         const glbBlob = await this.exportSceneToGLBBlob();
         if (!glbBlob) {
-          this.$message.error('鍦烘櫙瀵煎嚭澶辫触');
+          this.$message.error('场景导出失败');
           this.saveLoading = false;
           return;
         }
@@ -991,7 +988,7 @@ export default {
             this.currentSceneId
         );
         
-        // 淇濆瓨璐村浘淇℃伅
+        // 保存贴图信息
         if (sceneAsset && sceneAsset.id) {
           this.currentSceneId = sceneAsset.id;
           this.currentSceneName = sceneAsset.name || this.saveForm.name.trim();
@@ -1004,9 +1001,9 @@ export default {
             const textureInfo = JSON.stringify(this.buildSceneMetadataPayload());
             try {
               await saveSceneTextures(sceneAsset.id, textureInfo);
-              console.log('璐村浘淇℃伅淇濆瓨鎴愬姛');
+              console.log('贴图信息保存成功');
             } catch (err) {
-              console.error('淇濆瓨璐村浘淇℃伅澶辫触:', err);
+              console.error('保存贴图信息失败:', err);
             }
           }
           await this.loadAllPanels(sceneAsset.id);
@@ -1017,8 +1014,8 @@ export default {
         this.resetSaveForm();
 
       } catch (err) {
-        console.error('淇濆瓨鍦烘櫙澶辫触:', err);
-        this.$message.error(`淇濆瓨鍦烘櫙澶辫触: ${err.message}`);
+        console.error('保存场景失败:', err);
+        this.$message.error(`保存场景失败: ${err.message}`);
       } finally {
         this.saveLoading = false;
       }
@@ -1078,7 +1075,7 @@ export default {
         window.threeScene.scene = this.scene;
       }, undefined, (error) => {
         console.error('load model failed:', error);
-        this.$message.error(`??????: ${normalizedModel.name}`);
+        this.$message.error(`加载模型失败: ${normalizedModel.name}`);
       });
     },
 
@@ -1089,22 +1086,22 @@ export default {
     onClick(event) {
       if (!this.sceneLoaded || this.showGateStation) return;
 
-      console.log("鐐瑰嚮浜嬩欢瑙﹀彂");
+      console.log("点击事件触发");
 
       const container = document.querySelector('.scene-container');
       const rect = container.getBoundingClientRect();
       this.mouse.x = (event.clientX - rect.left) / rect.width * 2 - 1;
       this.mouse.y = - (event.clientY - rect.top) / rect.height * 2 + 1;
 
-      console.log("榧犳爣鍧愭爣:", this.mouse.x, this.mouse.y);
+      console.log("鼠标坐标:", this.mouse.x, this.mouse.y);
 
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
       const clickableObjects = this.scene.children.filter(child => child !== this.helperGroup);
-      console.log("鍙偣鍑诲璞℃暟閲?", clickableObjects.length);
+      console.log("可点击对象数量", clickableObjects.length);
 
       const intersects = this.raycaster.intersectObjects(clickableObjects, true);
-      console.log("灏勭嚎妫€娴嬬粨鏋?", intersects);
+      console.log("射线检测结果", intersects);
 
       if (intersects.length > 0) {
         let selectedObject = intersects[0].object;
@@ -1112,27 +1109,27 @@ export default {
           selectedObject = selectedObject.parent;
         }
 
-        console.log("鎵惧埌妯″瀷:", selectedObject);
+        console.log("找到模型:", selectedObject);
         if (this.bindMode) {
           this.bindModelToPanel(selectedObject);
         } else {
           this.selectModel(selectedObject);
-          console.log("閫変腑鐨勬ā鍨?", this.selectedModel);
+          console.log("选中的模型", this.selectedModel);
         }
       } else {
-        console.log("娌℃湁鎵惧埌妯″瀷锛屽彇娑堥€変腑");
+        console.log("没有找到模型，取消选中");
         this.deselectModel();
       }
     },
 
     selectModel(model) {
-      console.log("selectModel 琚皟鐢紝妯″瀷:", model);
+      console.log("selectModel 被调用，模型:", model);
 
       this.deselectModel();
 
       this.selectedModel = model;
       this.selectedModel.boundData = this.getBindingForModel(this.getModelStorageId(model));
-      console.log("selectedModel 宸茶缃?", this.selectedModel);
+      console.log("selectedModel 已设置", this.selectedModel);
 
       this.addSelectionEffect(model);
 
@@ -2813,7 +2810,7 @@ export default {
   height: calc(100% - 64px);
 }
 
-/* 鍒濆鍦烘櫙閫夋嫨鐣岄潰 */
+/* 初始场景选择界面 */
 .scene-options {
   position: absolute;
   top: 50%;

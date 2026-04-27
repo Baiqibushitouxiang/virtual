@@ -1,5 +1,10 @@
 server:
   port: 9999
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 spring:
   datasource:
@@ -54,8 +59,8 @@ tencent:
     secret-id: ${TENCENT_COS_SECRET_ID:}
     secret-key: ${TENCENT_COS_SECRET_KEY:}
     region: ${TENCENT_COS_REGION:ap-nanjing}
-    bucket-name: ${TENCENT_COS_BUCKET:}
-    base-url: ${TENCENT_COS_BASE_URL:}
+    bucket-name: ${TENCENT_COS_BUCKET:le-models-cos-storage-1323954594}
+    base-url: ${TENCENT_COS_BASE_URL:https://le-models-cos-storage-1323954594.cos.ap-nanjing.myqcloud.com}
 
 storage:
   type: ${STORAGE_TYPE:cos}
@@ -63,8 +68,8 @@ storage:
 alert:
   notify:
     wecom:
-      enabled: ${ALERT_NOTIFY_WECOM_ENABLED:true}
-      webhook-url: ${ALERT_NOTIFY_WECOM_WEBHOOK_URL:https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=930b2554-2ec2-4c3d-af54-042e11cbcda5}
+      enabled: ${ALERT_NOTIFY_WECOM_ENABLED:false}
+      webhook-url: ${ALERT_NOTIFY_WECOM_WEBHOOK_URL:}
       connect-timeout-millis: ${ALERT_NOTIFY_WECOM_CONNECT_TIMEOUT_MILLIS:3000}
       read-timeout-millis: ${ALERT_NOTIFY_WECOM_READ_TIMEOUT_MILLIS:5000}
 
