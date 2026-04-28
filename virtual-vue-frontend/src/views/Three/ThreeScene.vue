@@ -601,7 +601,7 @@ export default {
           panels: []
         };
       } catch (error) {
-        console.error('瑙ｆ瀽鍦烘櫙鍏冩暟鎹け璐?', error);
+        console.error('解析场景元数据失败', error);
         return { version: 'legacy', textures: {}, bindings: [], panels: [] };
       }
     },
@@ -711,7 +711,7 @@ export default {
       
       console.log('选中的模型', this.selectedModel);
       
-      // 鍒涘缓涓€涓槑鏄剧殑娴嬭瘯璐村浘
+      // 创建一个明显的测试贴图
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
@@ -815,7 +815,7 @@ export default {
         return;
       }
 
-      // 妫€鏌ュ鍣ㄥ昂瀵?
+      // 检查容器尺寸
       const width = container.clientWidth;
       const height = container.clientHeight;
       
@@ -849,14 +849,14 @@ export default {
       this.addLighting();
 
       this.helperGroup = new THREE.Group();
-      // 鍒涘缓鏇村ぇ鐨勭綉鏍间互纭繚瀹屾暣鏄剧ず
+      // 创建更大的网格以确保完整显示
       const gridHelper = new THREE.GridHelper(2000, 2000, 0x888888, 0xcccccc);
       gridHelper.material.opacity = 0.3;
       gridHelper.material.transparent = true;
       this.helperGroup.add(gridHelper);
       this.scene.add(this.helperGroup);
 
-      // 纭繚缁戝畾姝ｇ‘鐨?this 涓婁笅鏂?
+      // 确保绑定正确的 this 上下文
       this.boundOnWindowResize = this.onWindowResize.bind(this);
       window.addEventListener("resize", this.boundOnWindowResize);
       
@@ -915,7 +915,7 @@ export default {
       const ambientLight = new THREE.AmbientLight(0x404040);
       this.scene.add(ambientLight);
       
-      // 娣诲姞棰濆鐨勫厜婧愪互纭繚缃戞牸鍚勯儴鍒嗛兘鑳借鐓т寒
+      // 添加额外的光源以确保网格各部分都能被照亮
       const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
       light2.position.set(0, -10, -10);
       this.scene.add(light2);
@@ -969,16 +969,20 @@ export default {
 
       this.saveLoading = true;
       try {
-        const glbBlob = await this.exportSceneToGLBBlob();
-        if (!glbBlob) {
-          this.$message.error('场景导出失败');
-          this.saveLoading = false;
-          return;
-        }
+        const sceneData = this.exportSceneStructure();
+        sceneData.sceneMeta = {
+          ...(sceneData.sceneMeta || {}),
+          id: this.currentSceneId,
+          name: this.saveForm.name.trim(),
+          description: this.saveForm.description.trim()
+        };
 
-        const fileName = `${this.saveForm.name.replace(/[^\w\u4e00-\u9fa5]/g, '_')}.glb`;
-        const file = new File([glbBlob], fileName, {
-          type: 'application/octet-stream'
+        const jsonBlob = new Blob([JSON.stringify(sceneData, null, 2)], {
+          type: 'application/json'
+        });
+        const fileName = `${this.saveForm.name.replace(/[^\w\u4e00-\u9fa5]/g, '_')}.json`;
+        const file = new File([jsonBlob], fileName, {
+          type: 'application/json'
         });
 
         const sceneAsset = await uploadScene(
@@ -996,7 +1000,7 @@ export default {
           await this.syncSceneBindings(sceneAsset.id);
           await this.persistDraftPanels(sceneAsset.id);
           const texturesToSave = this.saveSceneTextures(sceneAsset.id);
-          const shouldSaveMetadata = texturesToSave.length > 0 || this.modelBindings.length > 0;
+          const shouldSaveMetadata = texturesToSave.length > 0 || this.modelBindings.length > 0 || this.allPanels.length > 0;
           if (shouldSaveMetadata) {
             const textureInfo = JSON.stringify(this.buildSceneMetadataPayload());
             try {
@@ -1023,7 +1027,7 @@ export default {
 
     handleSaveDialogClose(done) {
       if (this.saveLoading) {
-        this.$message.warning('姝ｅ湪淇濆瓨锛岃绋嶅€?..');
+        this.$message.warning('正在保存，请稍候...');
         return;
       }
       this.resetSaveForm();
@@ -1041,6 +1045,7 @@ export default {
       const normalizedModel = {
         ...modelData,
         id: modelData.id || modelData.uuid || `scene-model-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        file: modelData.file ? getModelUrl(modelData.file) : modelData.file,
         position: modelData.position || { x: 0, y: 0, z: 0 },
         scale: modelData.scale || { x: 1, y: 1, z: 1 },
         rotation: modelData.rotation || { x: 0, y: 0, z: 0 },
@@ -1146,22 +1151,22 @@ export default {
     addSelectionEffect(model) {
       model.traverse(child => {
         if (child.isMesh) {
-          // 淇濆瓨鍘熷鏉愯川锛堝鏋滃皻鏈繚瀛橈級
+          // 保存原始材质（如果尚未保存）
           if (!child.userData.originalMaterial) {
             child.userData.originalMaterial = child.material.clone();
           }
 
-          // 鍒涘缓楂樹寒鏉愯川锛堝熀浜庡綋鍓嶆潗璐級
+          // 创建高亮材质（基于当前材质）
           const highlightMaterial = child.material.clone();
           
-          // 娣诲姞杞粨鍏夋晥鏋滆€屼笉鏄敼鍙橀鑹?
-          // 閫氳繃娣诲姞杞诲井鐨勮嚜鍙戝厜鏉ヨ〃绀洪€変腑鐘舵€?
+          // 添加轮廓光效果而不是改变颜色
+          // 通过添加轻微的自发光来表示选中状态
           if (child.material.map) {
-            // 瀵逛簬鏈夎创鍥剧殑鏉愯川锛屾坊鍔犻潪甯歌交寰殑鍙戝厜鏁堟灉
+            // 对于有贴图的材质，添加非常轻微的发光效果
             highlightMaterial.emissive = new THREE.Color(0x333333);
             highlightMaterial.emissiveIntensity = 0.4;
           } else {
-            // 瀵逛簬娌℃湁璐村浘鐨勬潗璐紝浣跨敤缁胯壊楂樹寒
+            // 对于没有贴图的材质，使用绿色高亮
             highlightMaterial.emissive = new THREE.Color(0x00ff00);
             highlightMaterial.emissiveIntensity = 0.3;
           }
@@ -1174,11 +1179,11 @@ export default {
     removeSelectionEffect(model) {
       model.traverse(child => {
         if (child.isMesh && child.userData.originalMaterial) {
-          // 鎭㈠鍘熷鏉愯川锛堝甫璐村浘鐨勬潗璐級
+          // 恢复原始材质（带贴图的材质）
           const originalMaterial = child.userData.originalMaterial;
           child.material = originalMaterial;
           
-          // 娉ㄦ剰锛氫笉瑕佸垹闄riginalMaterial寮曠敤锛屽洜涓烘垜浠彲鑳借繕浼氬啀娆￠€変腑杩欎釜妯″瀷
+          // 注意：不要删除originalMaterial引用，因为我们可能还会再次选中这个模型
         }
       });
     },
@@ -1195,17 +1200,17 @@ export default {
         const response = await getModelMenu();
         if (response && response.data) {
           this.modelData = response.data;
-          console.log('妯″瀷鏁版嵁鍔犺浇鎴愬姛:', this.modelData);
-          // 閫氱煡缁勫悎妯″瀷缂栬緫鍣ㄦ暟鎹凡鍔犺浇
+          console.log('模型数据加载成功:', this.modelData);
+          // 通知组合模型编辑器数据已加载
           if (this.isCompositeEditorVisible && this.$refs.compositeModelEditor) {
-            console.log('閫氱煡缁勫悎妯″瀷缂栬緫鍣ㄦ暟鎹凡鍔犺浇');
+            console.log('通知组合模型编辑器数据已加载');
             this.$refs.compositeModelEditor.receiveModelData(this.modelData);
           }
         }
         return this.modelData; // 杩斿洖鏁版嵁
       } catch (error) {
-        console.error('鍔犺浇妯″瀷鏁版嵁澶辫触:', error);
-        this.$message.error('鍔犺浇妯″瀷鏁版嵁澶辫触: ' + (error.message || '鏈煡閿欒'));
+        console.error('加载模型数据失败:', error);
+        this.$message.error('加载模型数据失败: ' + (error.message || '未知错误'));
         throw error;
       } finally {
         this.loading = false;
@@ -1250,15 +1255,15 @@ export default {
       }
 
       this.selectedModel = null;
-      console.log(`妯″瀷 ${model.name} 宸茶鍒犻櫎`);
+      console.log(`模型 ${model.name} 已被删除`);
     },
 
-    // 闂哥珯鍦烘櫙鏂规硶
+    // 闸站场景方法
     openGateStationInterface() {
       this.showGateStation = true;
       this.gateStationLoading = true;
 
-      // 娓呯悊3D鍦烘櫙
+      // 清理3D场景
       this.cleanupThreeScene();
     },
 
@@ -1281,11 +1286,11 @@ export default {
 
     onIframeLoad() {
       this.gateStationLoading = false;
-      console.log('闂哥珯鍦烘櫙鍔犺浇瀹屾垚');
+      console.log('闸站场景加载完成');
     },
 
     cleanupThreeScene() {
-      // 鏆傚仠鍔ㄧ敾
+      // 暂停动画
       if (this.animateId) {
         cancelAnimationFrame(this.animateId);
         this.animateId = null;
@@ -1412,7 +1417,7 @@ export default {
     async exportSceneToGLBBlob() {
       return new Promise((resolve, reject) => {
         if (!this.scene || !this.helperGroup) {
-          reject(new Error('鍦烘櫙鏈垵濮嬪寲'));
+          reject(new Error('场景未初始化'));
           return;
         }
 
@@ -1480,7 +1485,7 @@ export default {
         const operation = this.operationHistory[this.currentHistoryIndex];
         this.executeUndo(operation);
         this.currentHistoryIndex--;
-        this.$message.success('鎾ら攢鎿嶄綔');
+        this.$message.success('撤销操作');
       }
     },
 
@@ -1490,11 +1495,11 @@ export default {
     clearAllModels() {
       if (!this.scene) return;
       this.$confirm('确定要清除场景中的所有模型吗？此操作不可撤销。', '提示', {
-        confirmButtonText: '纭畾',
+        confirmButtonText: '确定',
         cancelButtonText: '鍙栨秷',
         type: 'warning'
       }).then(() => {
-        // 鑾峰彇鎵€鏈夋ā鍨嬶紙鎺掗櫎杈呭姪瀵硅薄锛?
+        // 获取所有模型（排除辅助对象）
         const models = this.scene.children.filter(child =>
             child !== this.helperGroup && child.isGroup
         );
@@ -1504,7 +1509,7 @@ export default {
 
         this.deselectModel();
 
-        // 閲嶇疆鎿嶄綔鍘嗗彶
+        // 重置操作历史
         this.operationHistory = [];
         this.currentHistoryIndex = -1;
         this.hasChanges = false;
@@ -1587,7 +1592,7 @@ export default {
     },
 
     handleKeyDown(event) {
-      if (this.showGateStation) return; // 闂哥珯鍦烘櫙涓笉鍝嶅簲蹇嵎閿?
+      if (this.showGateStation) return; // 闸站场景中不响应快捷键
 
       if (event.ctrlKey || event.metaKey) {
         switch (event.key.toLowerCase()) {
@@ -1638,15 +1643,15 @@ export default {
     setSolidColor(color) {
       this.scene.background = new THREE.Color(color);
       this.skyboxEnabled = false;
-      this.$message.success(`鑳屾櫙棰滆壊宸茶缃负 ${color}`);
+      this.$message.success(`背景颜色已设置为 ${color}`);
     },
 
     setDynamicSky() {
-      // 绠€鍖栫殑鍔ㄦ€佸ぉ绌哄疄鐜?
+      // 简化的动态天空实现
       const skyColor = new THREE.Color(0x87CEEB);
       this.scene.background = skyColor;
       this.skyboxEnabled = false;
-      this.$message.success('鍔ㄦ€佸ぉ绌哄凡鍚敤锛堝熀纭€鐗堬級');
+      this.$message.success('动态天空已启用（基础版）');
     },
     clearBackground() {
       this.scene.background = null;
@@ -2031,8 +2036,8 @@ export default {
         }
         this.$message.success(`已绑定到模型: ${model.name || '未命名模型'}`);
       } catch (e) {
-        console.error('缁戝畾妯″瀷澶辫触:', e);
-        this.$message.error('缁戝畾妯″瀷澶辫触');
+        console.error('绑定模型失败:', e);
+        this.$message.error('绑定模型失败');
       }
       
       this.bindMode = false;
@@ -2174,7 +2179,7 @@ export default {
           },
           undefined,
           (error) => {
-            console.error('澶╃┖鐩掕儗鏅姞杞藉け璐?', error);
+            console.error('天空盒背景加载失败', error);
             this.scene.background = new THREE.Color(0x87CEEB);
             this.skyboxEnabled = false;
             this.$message.error('天空背景加载失败，使用默认背景');
@@ -2257,7 +2262,7 @@ export default {
       return `${url}${separator}t=${Date.now()}`;
     },
     
-    // 鍔犺浇鍦烘櫙璐村浘淇℃伅
+    // 加载场景贴图信息
     async loadSceneTextures(sceneId) {
       try {
         const sceneAsset = await getScene(sceneId);
@@ -2280,7 +2285,7 @@ export default {
 
     // 搴旂敤宸蹭繚瀛樼殑璐村浘鍒版ā鍨?
     applySavedTextures() {
-      // 閬嶅巻鍦烘櫙涓殑鎵€鏈夋ā鍨?
+      // 遍历场景中的所有模型
       this.scene.traverse((object) => {
         if (object.isGroup && object !== this.helperGroup) {
           const textureData = this.modelTextures.get(this.getModelStorageId(object));
@@ -2291,14 +2296,14 @@ export default {
       });
     },
     
-    // 鎻愪緵妯″瀷鏁版嵁缁欑粍鍚堟ā鍨嬬紪杈戝櫒
+    // 提供模型数据给组合模型编辑器
     provideModelData() {
-      console.log('鎻愪緵妯″瀷鏁版嵁缁欑粍鍚堟ā鍨嬬紪杈戝櫒');
-      // 鐩存帴浼犻€掑綋鍓嶇殑妯″瀷鏁版嵁锛屽鏋滀负绌哄垯鍏堝姞杞?
+      console.log('提供模型数据给组合模型编辑器');
+      // 直接传递当前的模型数据，如果为空则先加载
       if (this.modelData.length === 0) {
         this.loadModelData();
       } else {
-        // 濡傛灉鏁版嵁宸茬粡瀛樺湪锛岀洿鎺ヤ紶閫掔粰缁勫悎妯″瀷缂栬緫鍣?
+        // 如果数据已经存在，直接传递给组合模型编辑器
         if (this.$refs.compositeModelEditor) {
           console.log('直接传递现有模型数据给组合模型编辑器');
           this.$refs.compositeModelEditor.receiveModelData(this.modelData);
@@ -2306,14 +2311,14 @@ export default {
       }
     },
     
-    // 鎺ユ敹妯″瀷鏁版嵁骞朵紶閫掔粰缁勫悎妯″瀷缂栬緫鍣?
+    // 接收模型数据并传递给组合模型编辑器
     receiveModelData(data) {
       if (this.$refs.compositeModelEditor) {
         this.$refs.compositeModelEditor.receiveModelData(data);
       }
     },
     
-    // 鑾峰彇鍦烘櫙涓殑妯″瀷鍒楄〃
+    // 获取场景中的模型列表
     getSceneModels() {
       if (!this.scene) return [];
       
@@ -2344,21 +2349,21 @@ export default {
       return models;
     },
     
-    // 鎵撳紑缁勫悎妯″瀷閫夋嫨鍣?
+    // 打开组合模型选择器
     openCompositeModelSelector() {
       this.isCompositeModelSelectorVisible = true;
     },
     
-    // 鎵撳紑缁勫悎妯″瀷缂栬緫鍣?
+    // 打开组合模型编辑器
     openCompositeModelEditor() {
       this.isCompositeEditorVisible = true;
       // 浣跨敤 $nextTick 纭繚缁勪欢宸叉寕杞藉悗鍐嶅姞杞芥暟鎹?
       this.$nextTick(() => {
-        // 纭繚妯″瀷鏁版嵁宸插姞杞?
+        // 确保模型数据已加载
         if (this.modelData.length === 0) {
           this.loadModelData();
         } else {
-          // 濡傛灉鏁版嵁宸茬粡瀛樺湪锛岀洿鎺ヤ紶閫掔粰缁勫悎妯″瀷缂栬緫鍣?
+          // 如果数据已经存在，直接传递给组合模型编辑器
           if (this.$refs.compositeModelEditor) {
             console.log('直接传递现有模型数据给组合模型编辑器');
             this.$refs.compositeModelEditor.receiveModelData(this.modelData);
@@ -2367,24 +2372,24 @@ export default {
       });
     },
     
-    // 鍔犺浇缁勫悎妯″瀷
+    // 加载组合模型
     async loadCompositeModel(compositeModel) {
       try {
-        // 鑾峰彇缁勫悎妯″瀷鐨勭粍浠?
+        // 获取组合模型的组件
         const response = await getCompositeModelComponents(compositeModel.id);
         const components = response.data || response;
         
-        // 鍔犺浇姣忎釜缁勪欢瀵瑰簲鐨勬ā鍨?
+        // 加载每个组件对应的模型
         for (const component of components) {
-          // 杩欓噷闇€瑕佹牴鎹甤omponent.modelId鑾峰彇瀹為檯鐨勬ā鍨嬩俊鎭?
-          // 妫€鏌odelId鏄惁宸茬粡鏄畬鏁碪RL锛岄伩鍏嶉噸澶嶆坊鍔犲墠缂€
+          // 这里需要根据component.modelId获取实际的模型信息
+          // 检查modelId是否已经是完整URL，避免重复添加前缀
           let fileUrl = component.modelId;
           if (fileUrl && !fileUrl.startsWith('http')) {
             fileUrl = getFileUrl(component.modelId);
           }
           
           const modelData = {
-            name: `妯″瀷_${component.modelId}`,
+            name: `模型_${component.modelId}`,
             file: fileUrl,
             position: { 
               x: component.position_x || 0, 
@@ -2404,19 +2409,19 @@ export default {
             boundData: null,
           };
           
-          // 鍔犺浇妯″瀷
+          // 加载模型
           this.loadModel(modelData);
         }
         
         this.$message.success(`组合模型 "${compositeModel.name}" 已加载`);
         this.isCompositeModelSelectorVisible = false;
       } catch (error) {
-        console.error('鍔犺浇缁勫悎妯″瀷澶辫触:', error);
-        this.$message.error('鍔犺浇缁勫悎妯″瀷澶辫触: ' + (error.message || '鏈煡閿欒'));
+        console.error('加载组合模型失败:', error);
+        this.$message.error('加载组合模型失败: ' + (error.message || '未知错误'));
       }
     },
     
-    // 淇濆瓨缁勫悎妯″瀷
+    // 保存组合模型
     async saveCompositeModel(compositeModelData) {
       // 闃叉閲嶅鎻愪氦
       if (this.savingCompositeModel) {
@@ -2425,15 +2430,15 @@ export default {
       
       try {
         this.savingCompositeModel = true;
-        // 璋冪敤鍚庣API淇濆瓨缁勫悎妯″瀷
+        // 调用后端API保存组合模型
         const response = await createCompositeModel(compositeModelData);
-        console.log('淇濆瓨缁勫悎妯″瀷鍒板悗绔?', response);
-        this.$message.success('缁勫悎妯″瀷淇濆瓨鎴愬姛');
+        console.log('保存组合模型到后端', response);
+        this.$message.success('组合模型保存成功');
         
         // 鍏抽棴缂栬緫鍣?
         this.isCompositeEditorVisible = false;
       } catch (error) {
-        console.error('淇濆瓨缁勫悎妯″瀷澶辫触:', error);
+        console.error('保存组合模型失败:', error);
         this.$message.error('淇濆瓨澶辫触: ' + (error.message || '鏈煡閿欒'));
       } finally {
         this.savingCompositeModel = false;
@@ -2451,10 +2456,10 @@ export default {
       // 涓存椂瀛樺偍璐村浘淇℃伅
       this.textureCache.set(this.getModelStorageId(model), textureData);
       
-      // 绔嬪嵆鍦ㄨ鍥句腑棰勮璐村浘鏁堟灉
+      // 立即在视图中预览贴图效果
       this.previewTextureOnModel(model, textureData);
       
-      // 鏍囪鍦烘櫙鏈夊彉鍖?
+      // 标记场景有变化
       this.hasChanges = true;
     },
     
@@ -2467,22 +2472,22 @@ export default {
       // 绉婚櫎璐村浘缂撳瓨
       this.textureCache.delete(this.getModelStorageId(model));
       
-      // 绉婚櫎妯″瀷涓婄殑璐村浘
+      // 移除模型上的贴图
       this.removeTextureFromModel(model);
       
-      // 鏍囪鍦烘櫙鏈夊彉鍖?
+      // 标记场景有变化
       this.hasChanges = true;
     },
     
     previewTextureOnModel(model, textureData) {
-      console.log('寮€濮嬮瑙堣创鍥?', { 
+      console.log('开始预览贴图', {
         modelId: model.uuid, 
         modelName: model.name,
         textureDataLength: textureData.length,
         textureDataPreview: textureData.substring(0, 100)
       });
       
-      // 鍒涘缓鍥惧儚鍏冪礌鐢ㄤ簬鍔犺浇base64鏁版嵁
+      // 创建图像元素用于加载base64数据
       const image = new Image();
       image.src = textureData;
       
@@ -2493,26 +2498,26 @@ export default {
           imageHeight: image.height
         });
         const texture = new THREE.CanvasTexture(image);
-        // 璁剧疆绾圭悊鐨勮壊褰╃┖闂翠负sRGB
+        // 设置纹理的色彩空间为sRGB
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.needsUpdate = true;
         
-        // 璁剧疆绾圭悊閲嶅妯″紡锛岀‘淇濊创鍥炬纭鐩栨暣涓ā鍨嬭〃闈?
+        // 设置纹理重复模式，确保贴图正确覆盖整个模型表面
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(1, 1);
         
-        // 纭繚绾圭悊杩囨护鏂瑰紡姝ｇ‘
+        // 确保纹理过滤方式正确
         texture.magFilter = THREE.LinearFilter;
         texture.minFilter = THREE.LinearFilter;
         
-        // 寮哄埗璁剧疆UV鍙樻崲锛岀‘淇濊创鍥惧畬鏁磋鐩?
+        // 强制设置UV变换，确保贴图完整覆盖
         texture.matrixAutoUpdate = false;
         texture.matrix.setUvTransform(0, 0, 1, 1, 0, 0, 0);
         
-        console.log('鍒涘缓鐨勮创鍥?', texture);
+        console.log('创建的贴图', texture);
         
-        // 閬嶅巻妯″瀷鐨勬墍鏈夌綉鏍煎璞″苟搴旂敤璐村浘
+        // 遍历模型的所有网格对象并应用贴图
         let meshCount = 0;
         model.traverse((child) => {
           if (child.isMesh) {
@@ -2523,24 +2528,24 @@ export default {
               hasMap: !!child.material.map
             });
             
-            // 纭繚浣跨敤鏀寔璐村浘鐨勬潗璐ㄧ被鍨?
+            // 确保使用支持贴图的材质类型
             let material;
             
-            // 濡傛灉褰撳墠鏉愯川宸茬粡鏄悎閫傜殑绫诲瀷锛屽垯澶嶇敤骞舵洿鏂板叾灞炴€?
+            // 如果当前材质已经是合适的类型，则复用并更新其属性
             if (child.material instanceof THREE.MeshStandardMaterial || 
                 child.material instanceof THREE.MeshPhongMaterial ||
                 child.material instanceof THREE.MeshLambertMaterial) {
               material = child.material.clone();
               material.map = texture;
               
-              // 纭繚鏉愯川灞炴€ф纭缃互姝ｇ‘鏄剧ず璐村浘
+              // 确保材质属性正确设置以正确显示贴图
               material.needsUpdate = true;
               
-              // 娓呴櫎鍙兘褰卞搷璐村浘鏄剧ず鐨勫睘鎬?
+              // 清除可能影响贴图显示的属性
               material.emissive = new THREE.Color(0x000000); // 娓呴櫎鑷彂鍏?
               material.emissiveIntensity = 0; // 娓呴櫎鑷彂鍏夊己搴?
               
-              // 濡傛灉鏄疢eshStandardMaterial锛岃缃悎閫傜殑绮楃硻搴﹀拰閲戝睘搴︿互鏇村ソ鍦版樉绀鸿创鍥?
+              // 如果是MeshStandardMaterial，设置合适的粗糙度和金属度以更好地显示贴图
               if (material instanceof THREE.MeshStandardMaterial) {
                 material.roughness = 0.7; // 涓瓑绮楃硻搴﹁〃闈㈡洿瀹规槗鐪嬪埌璐村浘缁嗚妭
                 material.metalness = 0.2; // 杞诲井閲戝睘鎰?
@@ -2555,7 +2560,7 @@ export default {
               child.material = material;
               console.log('鏇存柊鐜版湁鏉愯川璐村浘');
             } 
-            // 濡傛灉鏄熀纭€鏉愯川鎴栧叾浠栫被鍨嬶紝鍒涘缓鏂扮殑MeshPhongMaterial
+            // 如果是基础材质或其他类型，创建新的MeshPhongMaterial
             else {
               material = new THREE.MeshPhongMaterial({
                 map: texture,
@@ -2577,12 +2582,12 @@ export default {
               
               // 鏇挎崲鏉愯川
               child.material = material;
-              console.log('鍒涘缓鏂扮殑MeshPhongMaterial');
+              console.log('创建新的MeshPhongMaterial');
             }
             
-            // 鍚屾鏇存柊鍘熷鏉愯川澶囦唤锛堝鏋滃瓨鍦級锛岀‘淇濆彇娑堥€変腑鏃朵篃鑳戒繚鐣欒创鍥?
+            // 同步更新原始材质备份（如果存在），确保取消选中时也能保留贴图
             if (child.userData.originalMaterial) {
-              // 鍏嬮殕褰撳墠鏉愯川浣滀负鏂扮殑鍘熷鏉愯川澶囦唤
+              // 克隆当前材质作为新的原始材质备份
               child.userData.originalMaterial = child.material.clone();
               console.log('鍚屾鏇存柊鍘熷鏉愯川澶囦唤');
             }
@@ -2596,19 +2601,19 @@ export default {
         
         console.log('共处理了', meshCount, '个网格对象');
         
-        // 寮哄埗閲嶆柊娓叉煋鍦烘櫙
+        // 强制重新渲染场景
         if (this.renderer && this.scene && this.camera) {
-          console.log('寮哄埗閲嶆柊娓叉煋鍦烘櫙');
+          console.log('强制重新渲染场景');
           this.renderer.render(this.scene, this.camera);
         }
         
-        // 鍐嶆妫€鏌ヨ创鍥炬槸鍚﹀簲鐢ㄦ垚鍔?
+        // 再次检查贴图是否应用成功
         setTimeout(() => {
-          console.log('寤惰繜妫€鏌ヨ创鍥惧簲鐢ㄧ粨鏋?');
+          console.log('延迟检查贴图应用结果');
           let appliedCount = 0;
           model.traverse((child) => {
             if (child.isMesh) {
-              console.log('缃戞牸瀵硅薄璐村浘鐘舵€?', {
+              console.log('网格对象贴图状态', {
                 name: child.name || child.uuid,
                 hasMap: !!child.material.map,
                 mapType: child.material.map ? child.material.map.constructor.name : 'None'
@@ -2617,18 +2622,18 @@ export default {
             }
           });
           
-          // 鏄剧ず璐村浘搴旂敤鎴愬姛鐨勬彁绀?
+          // 显示贴图应用成功的提示
           if (appliedCount > 0) {
             this.$message.success(`贴图已成功应用于 ${appliedCount} 个网格对象`);
           } else {
-            this.$message.warning('璐村浘搴旂敤鍙兘鏈垚鍔燂紝璇锋鏌ユ帶鍒跺彴杈撳嚭');
+            this.$message.warning('贴图应用可能未成功，请检查控制台输出');
           }
         }, 100);
       };
       
       // 娣诲姞閿欒澶勭悊
       image.onerror = (err) => {
-        console.error('璐村浘鍔犺浇澶辫触:', err);
+        console.error('贴图加载失败:', err);
         console.error('璐村浘鏁版嵁鍙兘鏈夐棶棰?', textureData.substring(0, 200));
         this.$message.error('贴图加载失败，请检查图片文件');
       };
@@ -2646,9 +2651,9 @@ export default {
             hasOriginalMaterial: !!child.userData.originalMaterial
           });
           
-          // 妫€鏌ユ槸鍚﹀瓨鍦ㄥ師濮嬫潗璐ㄥ浠?
+          // 检查是否存在原始材质备份
           if (child.userData.originalMaterial) {
-            // 鎭㈠鍘熷鏉愯川锛堟棤璐村浘鐨勬潗璐級
+            // 恢复原始材质（无贴图的材质）
             console.log('鎭㈠鍘熷鏉愯川');
             child.material = child.userData.originalMaterial;
             child.material.needsUpdate = true;
@@ -2658,12 +2663,12 @@ export default {
               child.material.map = null;
             }
             
-            // 鏇存柊鍘熷鏉愯川澶囦唤锛岀‘淇濆叾涓笉鍖呭惈璐村浘
+            // 更新原始材质备份，确保其中不包含贴图
             child.userData.originalMaterial = child.material.clone();
             
             restoredCount++;
           } else {
-            // 濡傛灉娌℃湁鍘熷鏉愯川澶囦唤锛屽皾璇曟竻闄よ创鍥?
+            // 如果没有原始材质备份，尝试清除贴图
             console.log('清除当前材质的贴图');
             if (child.material.map) {
               child.material.map = null;
@@ -2672,7 +2677,7 @@ export default {
             }
           }
           
-          // 纭繚绉婚櫎鎵€鏈変笌璐村浘鐩稿叧鐨勫睘鎬?
+          // 确保移除所有与贴图相关的属性
           if (child.material && child.material.map) {
             child.material.map = null;
             child.material.needsUpdate = true;
@@ -2682,9 +2687,9 @@ export default {
       
       console.log('鍏辨仮澶嶄簡', restoredCount, '涓綉鏍煎璞＄殑鏉愯川');
       
-      // 寮哄埗閲嶆柊娓叉煋鍦烘櫙
+      // 强制重新渲染场景
       if (this.renderer && this.scene && this.camera) {
-        console.log('寮哄埗閲嶆柊娓叉煋鍦烘櫙');
+        console.log('强制重新渲染场景');
         this.renderer.render(this.scene, this.camera);
       }
       
@@ -2694,9 +2699,9 @@ export default {
       }
     },
     
-    // 淇濆瓨鍦烘櫙鏃惰皟鐢ㄦ鏂规硶鎸佷箙鍖栬创鍥句俊鎭?
+    // 保存场景时调用此方法持久化贴图信息
     saveSceneTextures(sceneId) {
-      // 灏嗚创鍥剧紦瀛樿浆鎹负鍙彂閫佸埌鍚庣鐨勬牸寮?
+      // 将贴图缓存转换为可发送到后端的格式
       const texturesToSave = [];
       for (let [modelId, textureData] of this.textureCache.entries()) {
         texturesToSave.push({
@@ -2708,8 +2713,8 @@ export default {
       // 濡傛灉鏈夎创鍥句俊鎭渶瑕佷繚瀛橈紝鍒欏彂閫佸埌鍚庣
       if (texturesToSave.length > 0) {
         // 杩欓噷搴旇璋冪敤鍚庣API淇濆瓨璐村浘淇℃伅
-        // 鐢变簬褰撳墠鍚庣娌℃湁涓撻棬鐨勮创鍥句繚瀛樻帴鍙ｏ紝鎴戜滑灏嗚创鍥句俊鎭繚瀛樺埌鍦烘櫙璧勪骇涓?
-        console.log("闇€瑕佷繚瀛樼殑璐村浘淇℃伅:", texturesToSave);
+        // 由于当前后端没有专门的贴图保存接口，我们将贴图信息保存到场景资产中
+        console.log("需要保存的贴图信息:", texturesToSave);
         return texturesToSave;
       }
       
@@ -2839,21 +2844,21 @@ export default {
   align-items: center;
 }
 
-/* 3D鍦烘櫙瀹瑰櫒 - 鍏ㄥ睆 */
+/* 3D场景容器 - 全屏 */
 .scene-container {
   width: 100%;
   height: 100%;
   position: relative;
-  min-height: 400px; /* 娣诲姞鏈€灏忛珮搴︾‘淇濇湁灏哄 */
+  min-height: 400px; /* 添加最小高度确保有尺寸 */
 }
 
-/* 闂哥珯鍦烘櫙瀹瑰櫒 - 鍏ㄥ睆 */
+/* 闸站场景容器 - 全屏 */
 .gate-station-container {
   width: 100%;
   height: 100%;
   position: relative;
   background: white;
-  min-height: 400px; /* 娣诲姞鏈€灏忛珮搴︾‘淇濇湁灏哄 */
+  min-height: 400px; /* 添加最小高度确保有尺寸 */
 }
 
 .gate-station-iframe {
@@ -2863,7 +2868,7 @@ export default {
   background: white;
 }
 
-/* 鍔犺浇鐘舵€佹寚绀?*/
+/* 加载状态指示 */
 .gate-station-loading {
   position: absolute;
   top: 50%;
@@ -2879,10 +2884,10 @@ export default {
   margin-bottom: 10px;
 }
 
-/* 鎿嶄綔鎻愮ず鏍峰紡 */
+/* 操作提示样式 */
 .operation-tips {
   position: absolute;
-  top: 74px; /* 鍦ㄥ伐鍏锋爮涓嬫柟 */
+  top: 74px; /* 在工具栏下方 */
   right: 10px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -2912,7 +2917,7 @@ export default {
 .tips-content strong {
   color: #409eff;
 }
-/* 甯姪鎸夐挳鏍峰紡 */
+/* 帮助按钮样式 */
 .help-button {
   position: absolute;
   bottom: 15px;
@@ -2935,7 +2940,7 @@ export default {
   transform: scale(1.1);
 }
 
-/* 鍔ㄧ敾鏁堟灉 */
+/* 动画效果 */
 @keyframes slideIn {
   from {
     opacity: 0;

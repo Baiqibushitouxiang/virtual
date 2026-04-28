@@ -27,10 +27,11 @@ DROP TABLE IF EXISTS `composite_model_components`;
 DROP TABLE IF EXISTS `composite_models`;
 DROP TABLE IF EXISTS `scene_assets`;
 DROP TABLE IF EXISTS `userdata`;
+DROP TABLE IF EXISTS `Users`;
 DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `models`;
 
-CREATE TABLE `users` (
+CREATE TABLE `Users` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(50) NOT NULL,
     `password` VARCHAR(255) NOT NULL,
@@ -51,7 +52,7 @@ CREATE TABLE `userdata` (
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_userdata_user_id` (`user_id`),
-    CONSTRAINT `fk_userdata_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_userdata_user` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `models` (
@@ -240,7 +241,7 @@ CREATE TABLE `alert_notification_log` (
 
 -- Seed data kept for deployment
 -- Default administrator account: admin / 123456
-INSERT INTO `users` (`id`, `username`, `password`, `phone`, `email`, `role`, `is_deleted`) VALUES
+INSERT INTO `Users` (`id`, `username`, `password`, `phone`, `email`, `role`, `is_deleted`) VALUES
 (1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', '12345678901', '123456@qq.com', 'ADMIN', 0);
 
 INSERT INTO `userdata` (`id`, `user_id`, `user_info`, `created_at`, `updated_at`) VALUES

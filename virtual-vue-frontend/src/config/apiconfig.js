@@ -1,12 +1,12 @@
 export const API_CONFIG = {
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:9999',
-    wsBaseURL: import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:9999',
+    baseURL: import.meta.env.VITE_API_BASE_URL || '',
+    wsBaseURL: import.meta.env.VITE_WS_BASE_URL || '',
     timeout: 5000,
     uploadTimeout: Number(import.meta.env.VITE_API_UPLOAD_TIMEOUT || 600000)
 };
 
 export const EXTERNAL_CONFIG = {
-    gateStationURL: import.meta.env.VITE_GATE_STATION_URL || 'http://127.0.0.1:8888'
+    gateStationURL: import.meta.env.VITE_GATE_STATION_URL || ''
 };
 
 function normalizePath(base, path) {
